@@ -5,29 +5,42 @@ import { LoadingScreen } from "@/components/loading-screen"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Mountain, Target, TrendingUp, ArrowRight, Sparkles } from "lucide-react"
-import Link from "next/link"
+import { Mountain, Target, TrendingUp, ArrowRight, Sparkles, AlertCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function LandingPage() {
   const { user, loading, signInAsDemo } = useAuth()
   const [demoLoading, setDemoLoading] = useState(false)
+  const [error, setError] = useState("")
+  const router = useRouter()
 
   useEffect(() => {
     if (!loading && user) {
-      // Force redirect to dashboard if user is authenticated
-      window.location.href = "/dashboard"
+      // Redirect to dashboard if user is authenticated
+      router.push("/dashboard")
     }
-  }, [user, loading])
+  }, [user, loading, router])
 
   const handleDemoLogin = async () => {
     try {
       setDemoLoading(true)
+      setError("")
       await signInAsDemo()
-    } catch (error) {
+      // Redirect will be handled by the auth state change
+    } catch (error: any) {
       console.error("Demo login failed:", error)
+      setError(error.message || "Failed to sign in to demo account. Please try again.")
     } finally {
       setDemoLoading(false)
     }
+  }
+
+  const handleGetStarted = () => {
+    router.push("/auth/signin")
+  }
+
+  const handleSignIn = () => {
+    router.push("/auth/signin")
   }
 
   // Show loading screen while checking auth state
@@ -57,16 +70,19 @@ export default function LandingPage() {
               <span className="text-lg font-semibold text-gray-900">Trail Tracker</span>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/auth/signin">
-                <Button variant="ghost" className="text-gray-700 hover:text-green-700 hover:bg-green-50 font-medium">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/auth/signin">
-                <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium px-4 shadow-lg">
-                  Get Started
-                </Button>
-              </Link>
+              <Button
+                onClick={handleSignIn}
+                variant="ghost"
+                className="text-gray-700 hover:text-green-700 hover:bg-green-50 font-medium"
+              >
+                Sign In
+              </Button>
+              <Button
+                onClick={handleGetStarted}
+                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium px-4 shadow-lg"
+              >
+                Get Started
+              </Button>
             </div>
           </div>
         </div>
@@ -95,21 +111,44 @@ export default function LandingPage() {
             Log your workouts, set fitness goals, and track your progress on your journey to outdoor mastery. From trail
             runs to mountain climbs, capture every adventure.
           </p>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg max-w-md mx-auto">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="w-4 h-4" />
+                <p className="text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-center gap-4">
-            <Link href="/auth/signin">
-              <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium px-6 py-3 text-base shadow-lg">
-                Start Tracking
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/auth/signin">
-              <Button
-                variant="outline"
-                className="border-green-200 text-green-700 font-medium px-6 py-3 text-base bg-white/80 hover:bg-green-50 hover:border-green-300"
-              >
-                Sign In
-              </Button>
-            </Link>
+            <Button
+              onClick={handleGetStarted}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium px-6 py-3 text-base shadow-lg"
+            >
+              Start Tracking
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <Button
+              onClick={handleSignIn}
+              variant="outline"
+              className="border-green-200 text-green-700 font-medium px-6 py-3 text-base bg-white/80 hover:bg-green-50 hover:border-green-300"
+            >
+              Sign In
+            </Button>
+          </div>
+
+          {/* Demo Login Option */}
+          <div className="mt-6">
+            <Button
+              onClick={handleDemoLogin}
+              disabled={demoLoading}
+              variant="ghost"
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              {demoLoading ? "Signing in..." : "Try Demo Account"}
+            </Button>
           </div>
         </div>
       </section>
@@ -172,12 +211,13 @@ export default function LandingPage() {
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
                 Join thousands of outdoor enthusiasts tracking their adventures with Trail Tracker.
               </p>
-              <Link href="/auth/signin">
-                <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium px-8 py-3 text-base shadow-lg">
-                  Create Your Account
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <Button
+                onClick={handleGetStarted}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium px-8 py-3 text-base shadow-lg"
+              >
+                Create Your Account
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </CardContent>
           </Card>
         </div>

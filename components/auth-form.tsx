@@ -1,15 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "./auth-provider"
-import { ArrowLeft, Mountain } from "lucide-react"
+import { ArrowLeft, Mountain, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
 interface AuthFormProps {
@@ -22,23 +22,57 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
   const [loading, setLoading] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const { signIn, signUp } = useAuth()
+  const router = useRouter()
 
   const isSignUp = mode === "signup"
 
+  const validateForm = () => {
+    if (!email || !password) {
+      setError("Please fill in all fields")
+      return false
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return false
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address")
+      return false
+    }
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) return
+
     try {
       setLoading(true)
       setError("")
+      setSuccess("")
 
       if (isSignUp) {
         await signUp(email, password)
+        setSuccess("Account created successfully! Please check your email to verify your account.")
       } else {
         await signIn(email, password)
+        // Redirect will be handled by auth state change
+        router.push("/dashboard")
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred. Please try again.")
+      console.error("Auth error:", err)
+      if (err.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password. Please try again.")
+      } else if (err.message?.includes("User already registered")) {
+        setError("An account with this email already exists. Please sign in instead.")
+      } else if (err.message?.includes("Email not confirmed")) {
+        setError("Please check your email and click the confirmation link before signing in.")
+      } else {
+        setError(err.message || "An error occurred. Please try again.")
+      }
     } finally {
       setLoading(false)
     }
@@ -48,6 +82,7 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
     try {
       setDemoLoading(true)
       setError("")
+      setSuccess("")
 
       console.log("Starting demo login...")
 
@@ -86,7 +121,7 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
       console.log("Demo login successful, user:", data.user.email)
 
       // Redirect to dashboard
-      window.location.href = "/dashboard"
+      router.push("/dashboard")
     } catch (err: any) {
       console.error("Demo login exception:", err)
       setError(`Demo login failed: ${err.message || "Unknown error"}`)
@@ -95,15 +130,23 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
     }
   }
 
+  const handleBackToHome = () => {
+    router.push("/")
+  }
+
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back to home link */}
         <div className="mb-4">
-          <Link href="/" className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium">
+          <Button
+            onClick={handleBackToHome}
+            variant="ghost"
+            className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium p-0"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to home
-          </Link>
+          </Button>
         </div>
 
         {/* Logo/Header */}
@@ -157,10 +200,23 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
               </>
             )}
 
+            {/* Success Message */}
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-700">
+                  <CheckCircle className="w-4 h-4" />
+                  <p className="text-sm">{success}</p>
+                </div>
+              </div>
+            )}
+
             {/* Error Message */}
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
+                <div className="flex items-center gap-2 text-red-700">
+                  <AlertCircle className="w-4 h-4" />
+                  <p className="text-sm">{error}</p>
+                </div>
                 {error.includes("Demo account not found") && (
                   <div className="mt-2 text-xs text-red-600">
                     <p>To fix this:</p>
@@ -213,7 +269,16 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
                 disabled={loading || demoLoading}
                 className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
               >
-                {loading ? (isSignUp ? "Creating account..." : "Signing in...") : isSignUp ? "Sign Up" : "Sign In"}
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    {isSignUp ? "Creating account..." : "Signing in..."}
+                  </div>
+                ) : isSignUp ? (
+                  "Sign Up"
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
 
