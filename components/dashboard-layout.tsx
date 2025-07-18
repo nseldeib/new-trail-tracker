@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 
 import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
-import { Mountain, LogOut } from "lucide-react"
+import { Mountain, LogOut, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -15,6 +16,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth()
   const pathname = usePathname()
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const getActiveTab = () => {
     if (pathname === "/dashboard") return "dashboard"
@@ -26,12 +28,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const activeTab = getActiveTab()
 
   const handleSignOut = async () => {
+    setIsSigningOut(true)
     try {
       await signOut()
     } catch (error) {
       console.error("Sign out failed:", error)
       // Force redirect even if there's an error
       window.location.href = "/"
+    } finally {
+      // Don't reset loading state since we're redirecting
+      // setIsSigningOut(false)
     }
   }
 
@@ -90,9 +96,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 variant="outline"
                 size="sm"
                 className="border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                disabled={isSigningOut}
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                {isSigningOut ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Signing Out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </>
+                )}
               </Button>
             </div>
           </div>
