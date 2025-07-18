@@ -185,6 +185,82 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Wellbeing Section - Takes full width */}
+        <Card className="bg-white shadow-sm border border-gray-200 md:col-span-2 lg:col-span-3 xl:col-span-4">
+          <CardContent className="p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                How are you feeling today?
+              </h3>
+              <p className="text-gray-600 text-sm">Rate your overall well-being and track your emotions</p>
+            </div>
+
+            {/* Overall Score Slider */}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-medium text-gray-900">Overall Score (1-10)</p>
+                <span className="text-sm text-orange-600 font-medium">
+                  {wellbeingScore[0]}/10 - {getScoreLabel(wellbeingScore[0])}
+                </span>
+              </div>
+              <Slider
+                value={wellbeingScore}
+                onValueChange={setWellbeingScore}
+                max={10}
+                min={1}
+                step={1}
+                className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600 [&_.bg-primary]:bg-green-600"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1 - Poor</span>
+                <span>5/10 - Average</span>
+                <span>10 - Excellent</span>
+              </div>
+            </div>
+
+            {/* Emotion Selection - Compact Grid */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-900 mb-2">How are you feeling? (Select all that apply)</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2">
+                {emotionOptions.map((emotion) => (
+                  <button
+                    key={emotion.id}
+                    onClick={() => handleEmotionToggle(emotion.id)}
+                    className={`p-2 rounded-lg border text-xs font-medium transition-colors ${
+                      selectedEmotions.includes(emotion.id)
+                        ? "border-green-500 bg-green-50 text-green-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="block mb-1">{emotion.emoji}</span>
+                    {emotion.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes and Save Button */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-3">
+                <p className="text-sm font-medium text-gray-900 mb-2">Notes (optional)</p>
+                <Textarea
+                  value={wellbeingNotes}
+                  onChange={(e) => setWellbeingNotes(e.target.value)}
+                  placeholder="Any additional thoughts about how you're feeling today..."
+                  className="w-full min-h-[60px] resize-none text-sm"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={handleSaveCheckin} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Check-in
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Action Cards - Each takes 1 column */}
         <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
           <CardContent className="p-4">
@@ -302,82 +378,6 @@ export default function DashboardPage() {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Wellbeing Section - Takes 2 columns on larger screens */}
-        <Card className="bg-white shadow-sm border border-gray-200 md:col-span-2 lg:col-span-2 xl:col-span-2">
-          <CardContent className="p-4">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-2">
-                <Heart className="w-5 h-5 text-red-500" />
-                How are you feeling today?
-              </h3>
-              <p className="text-gray-600 text-sm">Rate your overall well-being and track your emotions</p>
-            </div>
-
-            {/* Overall Score Slider */}
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm font-medium text-gray-900">Overall Score (1-10)</p>
-                <span className="text-sm text-orange-600 font-medium">
-                  {wellbeingScore[0]}/10 - {getScoreLabel(wellbeingScore[0])}
-                </span>
-              </div>
-              <Slider
-                value={wellbeingScore}
-                onValueChange={setWellbeingScore}
-                max={10}
-                min={1}
-                step={1}
-                className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600 [&_.bg-primary]:bg-green-600"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>1 - Poor</span>
-                <span>5/10 - Average</span>
-                <span>10 - Excellent</span>
-              </div>
-            </div>
-
-            {/* Emotion Selection - Compact Grid */}
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-900 mb-2">How are you feeling? (Select all that apply)</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {emotionOptions.map((emotion) => (
-                  <button
-                    key={emotion.id}
-                    onClick={() => handleEmotionToggle(emotion.id)}
-                    className={`p-2 rounded-lg border text-xs font-medium transition-colors ${
-                      selectedEmotions.includes(emotion.id)
-                        ? "border-green-500 bg-green-50 text-green-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <span className="block mb-1">{emotion.emoji}</span>
-                    {emotion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Notes and Save Button */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
-                <p className="text-sm font-medium text-gray-900 mb-2">Notes (optional)</p>
-                <Textarea
-                  value={wellbeingNotes}
-                  onChange={(e) => setWellbeingNotes(e.target.value)}
-                  placeholder="Any additional thoughts about how you're feeling today..."
-                  className="w-full min-h-[60px] resize-none text-sm"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button onClick={handleSaveCheckin} className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Check-in
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
