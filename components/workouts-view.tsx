@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,12 +30,42 @@ interface WorkoutsViewProps {
 }
 
 export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
+  const router = useRouter()
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null)
   const [showWorkoutForm, setShowWorkoutForm] = useState(false)
-  const [editingWorkout, setEditingWorkout] = useState<any>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleEditWorkout = (workout: Workout) => {
+    setEditingWorkout(workout)
+    setShowWorkoutForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowWorkoutForm(false)
+    setEditingWorkout(null)
+  }
+
+  const handleSaveWorkout = () => {
+    onRefresh()
+    handleCloseForm()
+  }
 
   const deleteWorkout = async (id: string) => {
-    await supabase.from("workouts").delete().eq("id", id)
-    onRefresh()
+    if (!confirm("Are you sure you want to delete this workout?")) return
+
+    try {
+      setDeletingId(id)
+      const { error } = await supabase.from("workouts").delete().eq("id", id)
+
+      if (error) throw error
+
+      onRefresh()
+    } catch (error) {
+      console.error("Error deleting workout:", error)
+      alert("Failed to delete workout. Please try again.")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const getDifficultyColor = (difficulty?: string) => {
@@ -62,6 +93,14 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
         return "🥾"
       case "snowboarding":
         return "🏂"
+      case "cycling":
+        return "🚴‍♂️"
+      case "swimming":
+        return "🏊‍♂️"
+      case "yoga":
+        return "🧘‍♀️"
+      case "strength":
+        return "💪"
       default:
         return "🏃‍♂️"
     }
@@ -75,8 +114,8 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
           <p className="text-gray-600">Track and manage your outdoor adventures</p>
         </div>
         <Button
-          onClick={() => setShowWorkoutForm(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+          onClick={() => router.push("/dashboard/workouts/new")}
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Workout
@@ -84,104 +123,116 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
       </div>
 
       {workouts.length === 0 ? (
-        <div className="flex items-center justify-center min-h-[300px]">
-          <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-4 text-green-600">
-              <Mountain className="w-full h-full" />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center max-w-md">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-full flex items-center justify-center">
+              <Mountain className="w-12 h-12 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No workouts yet</h2>
-            <p className="text-gray-500 mb-4">Start tracking your outdoor adventures!</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Start Your Fitness Journey</h2>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              Ready to track your outdoor adventures? Create your first workout and start building healthy habits that
+              last.
+            </p>
             <Button
-              onClick={() => setShowWorkoutForm(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+              onClick={() => router.push("/dashboard/workouts/new")}
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Your First Workout
+              <Plus className="w-5 h-5 mr-2" />
+              Create Your First Workout
             </Button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {workouts.map((workout) => (
             <Card
               key={workout.id}
-              className="bg-white shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+              className="bg-white shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-green-200"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{getActivityEmoji(workout.activity_type)}</span>
-                      <CardTitle className="text-gray-900 text-base">{workout.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{getActivityEmoji(workout.activity_type)}</span>
+                      <CardTitle className="text-gray-900 text-lg leading-tight">{workout.title}</CardTitle>
                     </div>
                     {workout.description && (
-                      <CardDescription className="text-gray-600 text-sm line-clamp-2">
+                      <CardDescription className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
                         {workout.description}
                       </CardDescription>
                     )}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 ml-2">
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        setEditingWorkout(workout)
-                        setShowWorkoutForm(true)
-                      }}
-                      className="h-7 w-7 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50"
+                      onClick={() => handleEditWorkout(workout)}
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
                     >
-                      <Edit className="w-3 h-3" />
+                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => deleteWorkout(workout.id)}
-                      className="h-7 w-7 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      disabled={deletingId === workout.id}
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      {deletingId === workout.id ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {workout.difficulty && (
-                    <Badge className={`${getDifficultyColor(workout.difficulty)} border text-xs`}>
+                    <Badge className={`${getDifficultyColor(workout.difficulty)} border text-xs font-medium`}>
                       {workout.difficulty}
                     </Badge>
                   )}
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     {workout.duration_minutes && (
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Clock className="w-3 h-3 text-green-600" />
-                        <span className="text-xs">{workout.duration_minutes}min</span>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Clock className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium">{workout.duration_minutes}min</span>
                       </div>
                     )}
                     {workout.distance && (
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <TrendingUp className="w-3 h-3 text-green-600" />
-                        <span className="text-xs">{workout.distance}mi</span>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium">{workout.distance}mi</span>
                       </div>
                     )}
                     {workout.elevation_gain && (
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <TrendingUp className="w-3 h-3 text-green-600" />
-                        <span className="text-xs">{workout.elevation_gain}ft</span>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Mountain className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium">{workout.elevation_gain}ft</span>
                       </div>
                     )}
                     {workout.location && (
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <MapPin className="w-3 h-3 text-green-600" />
-                        <span className="text-xs truncate">{workout.location}</span>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium truncate">{workout.location}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="text-xs text-gray-500">{new Date(workout.date).toLocaleDateString()}</div>
+                  <div className="text-sm text-gray-500 font-medium">
+                    {new Date(workout.date).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </div>
 
                   {workout.notes && (
-                    <p className="text-xs text-gray-600 bg-green-50 p-2 rounded border border-green-100 line-clamp-2">
+                    <p className="text-sm text-gray-600 bg-green-50 p-3 rounded-lg border border-green-100 line-clamp-2 leading-relaxed">
                       {workout.notes}
                     </p>
                   )}
@@ -192,20 +243,7 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
         </div>
       )}
 
-      {showWorkoutForm && (
-        <WorkoutForm
-          workout={editingWorkout}
-          onClose={() => {
-            setShowWorkoutForm(false)
-            setEditingWorkout(null)
-          }}
-          onSave={() => {
-            onRefresh()
-            setShowWorkoutForm(false)
-            setEditingWorkout(null)
-          }}
-        />
-      )}
+      {showWorkoutForm && <WorkoutForm workout={editingWorkout} onClose={handleCloseForm} onSave={handleSaveWorkout} />}
     </div>
   )
 }

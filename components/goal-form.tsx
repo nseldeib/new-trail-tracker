@@ -8,11 +8,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
 import { X } from "lucide-react"
 
+interface Goal {
+  id: string
+  title: string
+  description?: string
+  activity_type?: string
+  target_value?: number
+  current_value: number
+  unit?: string
+  target_date?: string
+  is_completed: boolean
+  created_at: string
+}
+
 interface GoalFormProps {
-  goal?: any
+  goal?: Goal | null
   onClose: () => void
   onSave: () => void
 }
@@ -23,11 +37,11 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
     description: "",
     activity_type: "",
     target_value: "",
-    current_value: "",
     unit: "",
     target_date: "",
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     if (goal) {
@@ -36,7 +50,6 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
         description: goal.description || "",
         activity_type: goal.activity_type || "",
         target_value: goal.target_value?.toString() || "",
-        current_value: goal.current_value?.toString() || "",
         unit: goal.unit || "",
         target_date: goal.target_date || "",
       })
@@ -46,172 +59,155 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
 
     try {
+      if (!formData.title.trim()) {
+        throw new Error("Goal title is required")
+      }
+
       const data = {
         ...formData,
         target_value: formData.target_value ? Number.parseFloat(formData.target_value) : null,
-        current_value: formData.current_value ? Number.parseFloat(formData.current_value) : 0,
+        current_value: goal?.current_value || 0,
+        is_completed: goal?.is_completed || false,
       }
 
       if (goal) {
-        await supabase.from("goals").update(data).eq("id", goal.id)
+        // Update existing goal
+        const { error: updateError } = await supabase.from("goals").update(data).eq("id", goal.id)
+
+        if (updateError) throw updateError
       } else {
-        await supabase.from("goals").insert([data])
+        // Create new goal
+        const { error: insertError } = await supabase.from("goals").insert([data])
+
+        if (insertError) throw insertError
       }
 
       onSave()
-    } catch (error) {
-      console.error("Error saving goal:", error)
+    } catch (err: any) {
+      console.error("Error saving goal:", err)
+      setError(err.message || "Failed to save goal. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
+  const activityTypes = [
+    { value: "general", label: "🎯 General" },
+    { value: "running", label: "🏃‍♂️ Running" },
+    { value: "climbing", label: "🧗‍♂️ Climbing" },
+    { value: "hiking", label: "🥾 Hiking" },
+    { value: "snowboarding", label: "🏂 Snowboarding" },
+    { value: "cycling", label: "🚴‍♂️ Cycling" },
+    { value: "swimming", label: "🏊‍♂️ Swimming" },
+  ]
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            🎯 {goal ? "Edit Goal" : "Add New Goal"}
-          </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl font-semibold">{goal ? "Edit Goal" : "Create New Goal"}</DialogTitle>
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 hover:bg-gray-100">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Activity Type and Target Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="activity_type" className="text-sm font-medium text-gray-700">
-                Activity Type
-              </Label>
-              <Select
-                value={formData.activity_type}
-                onValueChange={(value) => setFormData({ ...formData, activity_type: value })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select activity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">🎯 General</SelectItem>
-                  <SelectItem value="running">🏃‍♂️ Running</SelectItem>
-                  <SelectItem value="climbing">🧗‍♂️ Climbing</SelectItem>
-                  <SelectItem value="hiking">🥾 Hiking</SelectItem>
-                  <SelectItem value="snowboarding">🏂 Snowboarding</SelectItem>
-                </SelectContent>
-              </Select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-700 text-sm">{error}</p>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="target_date" className="text-sm font-medium text-gray-700">
-                Target Date
-              </Label>
-              <Input
-                id="target_date"
-                type="date"
-                value={formData.target_date}
-                onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-                className="w-full"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="activity_type">Activity Type</Label>
+            <Select
+              value={formData.activity_type}
+              onValueChange={(value) => setFormData({ ...formData, activity_type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose activity type" />
+              </SelectTrigger>
+              <SelectContent>
+                {activityTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Goal Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-gray-700">
-              Goal Title
-            </Label>
+            <Label htmlFor="title">Goal Title *</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Run 100 miles this month, Climb 5.10a route"
-              className="w-full"
+              placeholder="e.g., Run 100 miles this month"
               required
             />
           </div>
 
-          {/* Goal Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">
-              Goal Description
-            </Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe your goal, motivation, and any specific requirements..."
-              className="w-full min-h-[100px] resize-none"
+              placeholder="Describe your goal..."
+              className="min-h-[80px] resize-none"
             />
           </div>
 
-          {/* Target Value and Unit */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="target_value" className="text-sm font-medium text-gray-700">
-                Target Value
-              </Label>
+              <Label htmlFor="target_value">Target Value</Label>
               <Input
                 id="target_value"
                 type="number"
                 step="0.1"
                 value={formData.target_value}
                 onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
-                placeholder="e.g., 100, 5, 10"
-                className="w-full"
+                placeholder="e.g., 100"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit" className="text-sm font-medium text-gray-700">
-                Unit
-              </Label>
+              <Label htmlFor="unit">Unit</Label>
               <Input
                 id="unit"
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                placeholder="e.g., miles, routes, peaks, days"
-                className="w-full"
+                placeholder="e.g., miles"
               />
             </div>
           </div>
 
-          {/* Priority Level */}
           <div className="space-y-2">
-            <Label htmlFor="priority" className="text-sm font-medium text-gray-700">
-              Priority Level
-            </Label>
-            <Select
-              value={formData.current_value.toString()}
-              onValueChange={(value) => setFormData({ ...formData, current_value: value })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Low Priority</SelectItem>
-                <SelectItem value="2">Medium Priority</SelectItem>
-                <SelectItem value="3">High Priority</SelectItem>
-                <SelectItem value="4">Critical Priority</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="target_date">Target Date</Label>
+            <Input
+              id="target_date"
+              type="date"
+              value={formData.target_date}
+              onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+            />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white">
-              {loading ? "Saving..." : goal ? "Update Goal" : "Save Goal"}
+            <Button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">
+              {loading ? "Saving..." : goal ? "Update Goal" : "Create Goal"}
             </Button>
             <Button type="button" variant="outline" onClick={onClose} className="px-6 bg-transparent">
               Cancel
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
