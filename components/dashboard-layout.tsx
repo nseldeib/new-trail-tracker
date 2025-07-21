@@ -22,6 +22,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (pathname === "/dashboard") return "dashboard"
     if (pathname === "/dashboard/workouts") return "workouts"
     if (pathname === "/dashboard/goals") return "goals"
+    if (pathname === "/dashboard/trips") return "trips"
     return "dashboard"
   }
 
@@ -85,6 +86,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   }`}
                 >
                   Goals
+                </Link>
+                <Link
+                  href="/dashboard/trips"
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === "trips"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Trips
                 </Link>
               </nav>
             </div>
