@@ -1,125 +1,133 @@
 "use client"
 
-import { Home, LayoutDashboard, ListChecks, MapPin, Settings, User } from "lucide-react"
-import type * as React from "react"
-import { usePathname } from "next/navigation"
+import type React from "react"
+import { useState } from "react"
 
-import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
+import { Mountain, LogOut, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-const navigationItems = [
-  {
-    name: "Home",
-    href: "/dashboard",
-    icon: Home,
-    current: false,
-  },
-  {
-    name: "Overview",
-    href: "/dashboard/overview",
-    icon: LayoutDashboard,
-    current: false,
-  },
-  {
-    name: "Tasks",
-    href: "/dashboard/tasks",
-    icon: ListChecks,
-    current: false,
-  },
-  {
-    name: "Trips",
-    href: "/dashboard/trips",
-    icon: MapPin,
-    current: false,
-  },
-]
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, signOut } = useAuth()
   const pathname = usePathname()
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
-  const navigation = navigationItems.map((item) => ({
-    ...item,
-    current: pathname === item.href,
-  }))
+  const getActiveTab = () => {
+    if (pathname === "/dashboard") return "dashboard"
+    if (pathname === "/dashboard/workouts") return "workouts"
+    if (pathname === "/dashboard/goals") return "goals"
+    if (pathname === "/dashboard/trips") return "trips"
+    return "dashboard"
+  }
+
+  const activeTab = getActiveTab()
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      await signOut()
+    } catch (error) {
+      console.error("Sign out failed:", error)
+      // Force redirect even if there's an error
+      window.location.href = "/"
+    } finally {
+      // Don't reset loading state since we're redirecting
+      // setIsSigningOut(false)
+    }
+  }
 
   return (
-    <div className="flex h-screen antialiased text-foreground">
-      <aside className="flex h-full w-64 flex-col border-r bg-muted/50 py-3">
-        <div className="px-6">
-          <a className="flex items-center gap-2 font-semibold" href="#">
-            <LayoutDashboard className="h-6 w-6" />
-            <span>Acme</span>
-          </a>
-        </div>
-        <Separator className="my-4" />
-        <nav className="flex flex-col gap-2 px-3">
-          {navigation.map((item) => (
-            <Button
-              key={item.name}
-              variant="ghost"
-              className={cn("justify-start px-4", item.current && "bg-secondary text-foreground")}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              <span>{item.name}</span>
-            </Button>
-          ))}
-        </nav>
-        <Separator className="my-4" />
-      </aside>
-      <main className="flex w-full flex-col overflow-hidden">
-        <header className="flex h-16 items-center gap-4 border-b bg-muted/50 p-6">
-          <div className="w-full">
-            <h1 className="font-semibold">Dashboard</h1>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                  <AvatarFallback>OM</AvatarFallback>
-                </Avatar>
+    <div className="min-h-screen bg-green-50">
+      {/* Header - Compact */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-8">
+              <Link href="/dashboard" className="flex items-center gap-3">
+                <div className="text-green-600">
+                  <Mountain className="w-7 h-7" />
+                </div>
+                <span className="text-lg font-semibold text-green-600">Trail Tracker</span>
+              </Link>
+
+              <nav className="flex gap-6">
+                <Link
+                  href="/dashboard"
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === "dashboard"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/workouts"
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === "workouts"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Workouts
+                </Link>
+                <Link
+                  href="/dashboard/goals"
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === "goals"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Goals
+                </Link>
+                <Link
+                  href="/dashboard/trips"
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === "trips"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Trips
+                </Link>
+              </nav>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600 text-sm hidden sm:block">Welcome, demo@trailtracker.com</span>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                disabled={isSigningOut}
+              >
+                {isSigningOut ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Signing Out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </>
+                )}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuShortcut>
-                <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                    <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                    <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuShortcut>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                Log out
-                <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-        <div className="flex-1 overflow-auto p-6">{children}</div>
-      </main>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content - Optimized spacing */}
+      <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
     </div>
   )
 }
