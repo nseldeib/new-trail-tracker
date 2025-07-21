@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Trash2, Edit2, Calendar, MapPin, Plus } from "lucide-react"
 import { useAuth } from "./auth-provider"
-import { createClient } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 interface Trip {
   id: string
@@ -48,8 +48,6 @@ export function TripsView() {
     type: "",
     notes: "",
   })
-
-  const supabase = createClient()
 
   useEffect(() => {
     if (user) {
