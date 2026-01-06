@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface AuthContextType {
   user: User | null
@@ -21,13 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    const supabase = createClient()
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -39,21 +39,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }
 
   const signUp = async (email: string, password: string) => {
+    const supabase = createClient()
     const { error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
   }
 
   const signOut = async () => {
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
-      // Force redirect to landing page after sign out
       window.location.href = "/"
     } catch (error) {
       console.error("Error signing out:", error)
@@ -63,10 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInAsDemo = async () => {
     try {
-      // Clear any existing session first
+      const supabase = createClient()
       await supabase.auth.signOut()
 
-      // Try to sign in with demo credentials
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: "demo@workouttracker.com",
         password: "demo123456",
@@ -81,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Demo login failed - no user returned")
       }
 
-      // Success - the auth state change will handle the redirect
       return data.user
     } catch (error) {
       console.error("Demo login error:", error)

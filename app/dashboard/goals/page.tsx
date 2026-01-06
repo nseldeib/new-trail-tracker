@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth-provider"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { GoalsView } from "@/components/goals-view"
 import { LoadingScreen } from "@/components/loading-screen"
@@ -43,6 +43,8 @@ export default function GoalsPage() {
     try {
       setLoading(true)
       setError("")
+
+      const supabase = createClient()
 
       const { data, error: fetchError } = await supabase
         .from("goals")

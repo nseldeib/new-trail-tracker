@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { X, Mountain } from "lucide-react"
 
 interface Workout {
@@ -95,6 +95,8 @@ export function WorkoutForm({ workout, onClose, onSave }: WorkoutFormProps) {
         distance: formData.distance ? Number.parseFloat(formData.distance) : null,
         elevation_gain: formData.elevation_gain ? Number.parseInt(formData.elevation_gain) : null,
       }
+
+      const supabase = createClient()
 
       if (workout) {
         const { error: updateError } = await supabase.from("workouts").update(data).eq("id", workout.id)

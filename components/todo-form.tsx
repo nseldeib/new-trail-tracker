@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { X } from "lucide-react"
 
 interface TodoFormProps {
@@ -45,6 +45,8 @@ export function TodoForm({ todo, onClose, onSave }: TodoFormProps) {
     setLoading(true)
 
     try {
+      const supabase = createClient()
+
       if (todo) {
         await supabase.from("todos").update(formData).eq("id", todo.id)
       } else {

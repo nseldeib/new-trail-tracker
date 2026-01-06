@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/auth-provider"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Mountain, Target, CheckCircle, TrendingUp, Plus, ArrowRight, Heart, Save } from "lucide-react"
@@ -78,6 +78,8 @@ export default function Dashboard() {
     try {
       setDataLoading(true)
 
+      const supabase = createClient()
+
       // Fetch workouts
       const { data: workoutsData } = await supabase
         .from("workouts")
@@ -129,6 +131,8 @@ export default function Dashboard() {
         emotions: selectedEmotions,
         notes: wellbeingNotes || undefined,
       }
+
+      const supabase = createClient()
 
       const { error } = await supabase.from("wellbeing_entries").insert({
         user_id: user.id,

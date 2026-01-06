@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GoalForm } from "./goal-form"
 import { Plus, Target, Trophy, CheckCircle, Star, Edit, Trash2, Circle } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface Goal {
   id: string
@@ -38,6 +38,7 @@ export function GoalsView({ goals, onRefresh }: GoalsViewProps) {
     }
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.from("goals").delete().eq("id", id)
       if (error) throw error
       onRefresh()
@@ -49,6 +50,7 @@ export function GoalsView({ goals, onRefresh }: GoalsViewProps) {
 
   const toggleGoalCompletion = async (goal: Goal) => {
     try {
+      const supabase = createClient()
       const { error } = await supabase.from("goals").update({ is_completed: !goal.is_completed }).eq("id", goal.id)
 
       if (error) throw error

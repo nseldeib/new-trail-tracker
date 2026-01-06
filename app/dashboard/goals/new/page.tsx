@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { ArrowLeft, Target, Plus } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 
@@ -57,6 +57,7 @@ export default function NewGoalPage() {
         is_completed: false,
       }
 
+      const supabase = createClient()
       const { error: insertError } = await supabase.from("goals").insert([data])
 
       if (insertError) {

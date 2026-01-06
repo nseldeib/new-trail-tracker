@@ -10,7 +10,7 @@ import { useAuth } from "./auth-provider"
 import { ArrowLeft, Mountain, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface AuthFormProps {
   mode?: "signin" | "signup"
@@ -85,6 +85,8 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
       setSuccess("")
 
       console.log("Starting demo login...")
+
+      const supabase = createClient()
 
       // First, sign out any existing session
       await supabase.auth.signOut()

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { WorkoutForm } from "./workout-form"
 import { Plus, MapPin, Clock, TrendingUp, Edit, Trash2, Mountain } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface Workout {
   id: string
@@ -55,6 +55,7 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
 
     try {
       setDeletingId(id)
+      const supabase = createClient()
       const { error } = await supabase.from("workouts").delete().eq("id", id)
 
       if (error) throw error

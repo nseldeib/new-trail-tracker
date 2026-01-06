@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { ArrowLeft, Plus, Clock, MapPin, TrendingUp, Mountain, Lightbulb } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 
@@ -76,6 +76,7 @@ export default function NewWorkoutPage() {
         user_id: user.id,
       }
 
+      const supabase = createClient()
       const { error: insertError } = await supabase.from("workouts").insert([data])
 
       if (insertError) {

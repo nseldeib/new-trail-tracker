@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { X } from "lucide-react"
 
 interface Goal {
@@ -72,6 +72,8 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
         current_value: goal?.current_value || 0,
         is_completed: goal?.is_completed || false,
       }
+
+      const supabase = createClient()
 
       if (goal) {
         // Update existing goal

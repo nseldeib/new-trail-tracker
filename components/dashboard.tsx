@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { useAuth } from "./auth-provider"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { WorkoutsView } from "./workouts-view"
 import { GoalsView } from "./goals-view"
 import { Mountain, LogOut, Target, CheckSquare, Activity, TrendingUp, Heart } from "lucide-react"
@@ -54,6 +54,8 @@ export function Dashboard() {
 
   const fetchData = async () => {
     try {
+      const supabase = createClient()
+
       const [workoutsRes, goalsRes] = await Promise.all([
         supabase.from("workouts").select("*").order("date", { ascending: false }),
         supabase.from("goals").select("*").order("created_at", { ascending: false }),
