@@ -22,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Plus, Edit2, Trash2, Calendar, MapPin, Activity } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "./auth-provider"
 
 interface Trip {
@@ -47,6 +47,7 @@ const activityTypes = [
 ]
 
 export function TripsView() {
+  const supabase = createClient()
   const { user } = useAuth()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
