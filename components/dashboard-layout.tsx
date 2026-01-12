@@ -2,123 +2,71 @@
 
 import type React from "react"
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Loader2, LogOut, Mountain } from "lucide-react"
 
 import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
-import { Mountain, LogOut, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+
+const NAV_ITEMS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/workouts", label: "Workouts" },
+  { href: "/dashboard/goals", label: "Goals" },
+  { href: "/dashboard/analytics", label: "Analytics" },
+  { href: "/dashboard/todos", label: "To-Dos" },
+  { href: "/dashboard/trips", label: "Trips" },
+] as const
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, signOut } = useAuth()
+export function DashboardLayout({ children }: DashboardLayoutProps): React.ReactElement {
+  const { signOut } = useAuth()
   const pathname = usePathname()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
-  const getActiveTab = () => {
-    if (pathname === "/dashboard") return "dashboard"
-    if (pathname === "/dashboard/workouts") return "workouts"
-    if (pathname === "/dashboard/goals") return "goals"
-    if (pathname === "/dashboard/analytics") return "analytics"
-    if (pathname === "/dashboard/todos") return "todos"
-    if (pathname === "/dashboard/trips") return "trips"
-    return "dashboard"
-  }
-
-  const activeTab = getActiveTab()
-
-  const handleSignOut = async () => {
+  async function handleSignOut(): Promise<void> {
     setIsSigningOut(true)
     try {
       await signOut()
     } catch (error) {
       console.error("Sign out failed:", error)
-      // Force redirect even if there's an error
       window.location.href = "/"
-    } finally {
-      // Don't reset loading state since we're redirecting
-      // setIsSigningOut(false)
     }
   }
 
   return (
     <div className="min-h-screen bg-green-50">
-      {/* Header - Compact */}
-      <div className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-8">
               <Link href="/dashboard" className="flex items-center gap-3">
-                <div className="text-green-600">
-                  <Mountain className="w-7 h-7" />
-                </div>
+                <Mountain className="w-7 h-7 text-green-600" />
                 <span className="text-lg font-semibold text-green-600">Trail Tracker</span>
               </Link>
 
               <nav className="flex gap-6">
-                <Link
-                  href="/dashboard"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "dashboard"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/dashboard/workouts"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "workouts"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Workouts
-                </Link>
-                <Link
-                  href="/dashboard/goals"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "goals"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Goals
-                </Link>
-                <Link
-                  href="/dashboard/analytics"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "analytics"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Analytics
-                </Link>
-                <Link
-                  href="/dashboard/todos"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "todos"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  To-Dos
-                </Link>
-                <Link
-                  href="/dashboard/trips"
-                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "trips"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Trips
-                </Link>
+                {NAV_ITEMS.map(({ href, label }) => {
+                  const isActive = pathname === href
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "py-3 px-1 border-b-2 font-medium text-sm transition-colors",
+                        isActive
+                          ? "border-green-500 text-green-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  )
+                })}
               </nav>
             </div>
 
@@ -146,10 +94,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Content - Optimized spacing */}
-      <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
+      <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>
     </div>
   )
 }
