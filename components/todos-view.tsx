@@ -161,9 +161,13 @@ export function TodosView() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">To-Dos</h1>
+      <div className="space-y-4">
+        <div className="relative bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl p-6 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-white drop-shadow-lg">To-Dos</h1>
+            <p className="text-white/90 text-sm">Manage your trail preparation tasks</p>
+          </div>
         </div>
         <div className="text-center py-8">Loading...</div>
       </div>
@@ -171,13 +175,20 @@ export function TodosView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">To-Dos</h1>
+    <div className="space-y-4">
+      {/* Vibrant Header */}
+      <div className="relative bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl p-6 overflow-hidden">
+        {/* Decorative overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">To-Dos</h1>
+          <p className="text-white/90 text-sm">Manage your trail preparation tasks</p>
+        </div>
       </div>
 
       {/* Inline Add Form */}
-      <Card>
+      <Card className="shadow-md border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
@@ -231,7 +242,8 @@ export function TodosView() {
             <Button
               type="submit"
               disabled={submitting || !formData.title.trim() || !formData.category}
-              className="bg-green-600 hover:bg-green-700"
+              variant="gradient"
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
             >
               {submitting ? "Adding..." : "Add Task"}
             </Button>
@@ -240,37 +252,56 @@ export function TodosView() {
       </Card>
 
       {/* Task Lists by Category */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {(["gear", "logistics", "training"] as const).map((category) => {
           const categoryTodos = groupedTodos[category] || []
           const Icon = categoryIcons[category]
 
           if (categoryTodos.length === 0) return null
 
+          const categoryColors = {
+            gear: "from-blue-500 to-cyan-500",
+            logistics: "from-green-500 to-teal-500",
+            training: "from-purple-500 to-pink-500"
+          }
+
           return (
-            <Card key={category}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon className="w-5 h-5" />
+            <Card key={category} className="shadow-md border-0 overflow-hidden">
+              <div className={`h-1.5 bg-gradient-to-r ${categoryColors[category]}`} />
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-r ${categoryColors[category]}`}>
+                    <Icon className="w-4 h-4 text-white" />
+                  </div>
                   {categoryLabels[category]}
-                  <span className="text-sm font-normal text-gray-500">
+                  <span className="text-xs font-normal text-gray-500">
                     ({categoryTodos.filter((t) => !t.completed).length} pending)
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {categoryTodos.map((todo) => (
                     <div
                       key={todo.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border ${
-                        todo.completed ? "bg-gray-50 border-gray-200" : "bg-white border-gray-200 hover:border-gray-300"
-                      } transition-colors`}
+                      className={`relative flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 overflow-hidden ${
+                        todo.completed
+                          ? "bg-gray-50 border-gray-200"
+                          : `bg-gradient-to-r ${categoryColors[category]}08 border-transparent hover:shadow-md`
+                      }`}
+                      style={!todo.completed ? {
+                        boxShadow: `0 0 0 1px ${category === 'gear' ? 'rgba(59, 130, 246, 0.2)' : category === 'logistics' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.2)'}`
+                      } : {}}
                     >
+                      {/* Colorful left accent */}
+                      {!todo.completed && (
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${categoryColors[category]}`} />
+                      )}
+
                       <Checkbox
                         checked={todo.completed}
                         onCheckedChange={() => toggleComplete(todo.id, todo.completed)}
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 ml-2"
                       />
 
                       <div className="flex-1 min-w-0">
@@ -282,17 +313,21 @@ export function TodosView() {
 
                         {todo.due_date && (
                           <div
-                            className={`text-sm flex items-center gap-1 mt-1 ${
+                            className={`text-xs flex items-center gap-1 mt-1 ${
                               todo.completed
                                 ? "text-gray-400"
                                 : isOverdue(todo.due_date)
-                                  ? "text-red-600"
+                                  ? "text-red-600 font-semibold"
                                   : "text-gray-600"
                             }`}
                           >
                             <Calendar className="w-3 h-3" />
                             {formatDate(todo.due_date)}
-                            {isOverdue(todo.due_date) && !todo.completed && " (Overdue)"}
+                            {isOverdue(todo.due_date) && !todo.completed && (
+                              <span className="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">
+                                Overdue
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -301,9 +336,9 @@ export function TodosView() {
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteTodo(todo.id)}
-                        className="flex-shrink-0 text-gray-400 hover:text-red-600"
+                        className="flex-shrink-0 text-gray-400 hover:text-red-600 h-8 w-8 p-0"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   ))}
@@ -314,13 +349,13 @@ export function TodosView() {
         })}
 
         {todos.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-8">
-              <div className="text-gray-500">
-                <Plus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No tasks yet</p>
-                <p>Add your first trail-related task above to get started!</p>
+          <Card className="shadow-md border-0">
+            <CardContent className="text-center py-12">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center">
+                <Plus className="w-10 h-10 text-amber-600" />
               </div>
+              <p className="text-lg font-semibold text-gray-900 mb-2">No tasks yet</p>
+              <p className="text-gray-600">Add your first trail-related task above to get started!</p>
             </CardContent>
           </Card>
         )}

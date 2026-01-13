@@ -87,31 +87,37 @@ export default function NewGoalPage() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        {/* Vibrant Header */}
+        <div className="mb-6">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 hover:bg-white/50"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            Back to Goals
           </Button>
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Target className="w-8 h-8 text-green-600" />
-              Create New Goal
-            </h1>
-            <p className="text-gray-600 mt-1">Set a new adventure goal and track your progress</p>
+
+          <div className="relative bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-xl p-8 overflow-hidden">
+            {/* Decorative overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl mb-4 border border-white/30 shadow-lg">
+                <Target className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Create New Goal</h1>
+              <p className="text-white/90">Set a new fitness milestone and track your progress</p>
+            </div>
           </div>
         </div>
 
         {/* Main Form Card */}
         <Card className="shadow-lg border-0 bg-white">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-100">
+          <CardHeader className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-b border-gray-100">
             <CardTitle className="text-xl text-gray-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-green-600" />
+              <Plus className="w-5 h-5 text-purple-600" />
               Goal Details
             </CardTitle>
           </CardHeader>
@@ -119,7 +125,7 @@ export default function NewGoalPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Display */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center gap-2 text-red-800">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -237,7 +243,7 @@ export default function NewGoalPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold text-base shadow-lg"
+                  className="flex-1 h-12 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -255,7 +261,7 @@ export default function NewGoalPage() {
                   type="button"
                   variant="outline"
                   onClick={() => router.back()}
-                  className="sm:w-32 h-12 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-base"
+                  className="sm:w-32 h-12 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-base transition-all duration-200"
                 >
                   Cancel
                 </Button>
@@ -265,7 +271,7 @@ export default function NewGoalPage() {
         </Card>
 
         {/* Quick Tips */}
-        <Card className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+        <Card className="mt-6 bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-purple-200">
           <CardContent className="p-4">
             <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">💡 Quick Tips</h3>
             <ul className="text-sm text-gray-700 space-y-1">

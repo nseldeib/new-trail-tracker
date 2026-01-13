@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -18,6 +18,11 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        gradient: "bg-gradient-teal text-white hover:shadow-lg hover:shadow-teal-500/30",
+        "gradient-coral": "bg-gradient-coral text-white hover:shadow-lg hover:shadow-coral-500/30",
+        "gradient-purple": "bg-gradient-purple text-white hover:shadow-lg hover:shadow-purple-500/30",
+        "gradient-green": "bg-gradient-green text-white hover:shadow-lg hover:shadow-green-500/30",
+        "gradient-amber": "bg-gradient-amber text-white hover:shadow-lg hover:shadow-amber-500/30",
       },
       size: {
         default: "h-10 px-4 py-2",

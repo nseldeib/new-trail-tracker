@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { WorkoutForm } from "./workout-form"
 import { Plus, MapPin, Clock, TrendingUp, Edit, Trash2, Mountain } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getActivityGradient, getActivityColor } from "@/lib/utils/colors"
+import { cn } from "@/lib/utils"
 
 interface Workout {
   id: string
@@ -109,25 +111,32 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">Your Workouts</h1>
-          <p className="text-gray-600">Track and manage your outdoor adventures</p>
+      {/* Vibrant Header */}
+      <div className="relative bg-gradient-to-br from-teal-500 via-green-500 to-blue-500 rounded-xl p-6 mb-4 overflow-hidden">
+        {/* Decorative overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">Your Workouts</h1>
+            <p className="text-white/90 text-sm">Track and manage your outdoor adventures</p>
+          </div>
+          <Button
+            onClick={() => router.push("/dashboard/workouts/new")}
+            variant="secondary"
+            className="bg-white/90 hover:bg-white text-teal-600 shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Workout
+          </Button>
         </div>
-        <Button
-          onClick={() => router.push("/dashboard/workouts/new")}
-          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Workout
-        </Button>
       </div>
 
       {workouts.length === 0 ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center max-w-md">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-full flex items-center justify-center">
-              <Mountain className="w-12 h-12 text-green-600" />
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-teal rounded-full flex items-center justify-center shadow-xl">
+              <Mountain className="w-12 h-12 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Start Your Fitness Journey</h2>
             <p className="text-gray-600 mb-6 leading-relaxed">
@@ -136,7 +145,8 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
             </p>
             <Button
               onClick={() => router.push("/dashboard/workouts/new")}
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              variant="gradient"
+              className="shadow-lg hover:shadow-xl"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Workout
@@ -144,18 +154,42 @@ export function WorkoutsView({ workouts, onRefresh }: WorkoutsViewProps) {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {workouts.map((workout) => (
             <Card
               key={workout.id}
-              className="bg-white shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-green-200"
+              className="relative overflow-hidden bg-white hover:shadow-xl transition-all duration-200 group border-0"
+              style={{
+                background: `linear-gradient(135deg, ${getActivityColor(workout.activity_type)}08 0%, white 100%)`
+              }}
             >
-              <CardHeader className="pb-3">
+              {/* Colored accent strip */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg transition-all group-hover:w-2"
+                style={{ background: getActivityGradient(workout.activity_type) }}
+              />
+
+              <CardHeader className="pb-3 ml-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">{getActivityEmoji(workout.activity_type)}</span>
-                      <CardTitle className="text-gray-900 text-lg leading-tight">{workout.title}</CardTitle>
+                      <div
+                        className="p-2.5 rounded-md flex items-center justify-center shadow-sm border border-white"
+                        style={{
+                          background: workout.activity_type === 'running' ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' :
+                                     workout.activity_type === 'climbing' ? 'linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)' :
+                                     workout.activity_type === 'hiking' ? 'linear-gradient(135deg, #d9f99d 0%, #bef264 100%)' :
+                                     workout.activity_type === 'snowboarding' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
+                                     workout.activity_type === 'cycling' ? 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)' :
+                                     workout.activity_type === 'swimming' ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)' :
+                                     workout.activity_type === 'yoga' ? 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)' :
+                                     workout.activity_type === 'strength' ? 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)' :
+                                     'linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)'
+                        }}
+                      >
+                        <span className="text-2xl">{getActivityEmoji(workout.activity_type)}</span>
+                      </div>
+                      <CardTitle className="text-gray-900 text-base leading-tight">{workout.title}</CardTitle>
                     </div>
                     {workout.description && (
                       <CardDescription className="text-gray-600 text-sm line-clamp-2 leading-relaxed">

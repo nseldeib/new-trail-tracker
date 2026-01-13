@@ -8,18 +8,31 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/auth-provider"
 import { LoadingScreen } from "@/components/loading-screen"
-import { Mountain, Target, CheckCircle, TrendingUp, Plus, ArrowRight, Heart, Save } from "lucide-react"
+import { Mountain, Target, CheckCircle, TrendingUp, Plus, ArrowRight, Heart, Save, Activity, Clock } from "lucide-react"
+import { MetricCard } from "@/components/analytics/metric-card"
+import { EmotionButton } from "@/components/ui/emotion-button"
+import { ProgressRing } from "@/components/charts/progress-ring"
+import { getActivityIcon, getActivityGradientClass, getDifficultyBadgeClass, getDaysRemaining, getMoodGradient } from "@/lib/utils/colors"
+import { StreakWidget } from "@/components/dashboard/streak-widget"
+import { ActivityDistributionWidget } from "@/components/dashboard/activity-distribution-widget"
+import { WeekComparisonWidget } from "@/components/dashboard/week-comparison-widget"
+import { WeatherWidget } from "@/components/dashboard/weather-widget"
+import confetti from "canvas-confetti"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 interface Workout {
   id: string
   activity_type: string
+  title?: string
   duration: number
   distance?: number
   location?: string
+  difficulty?: string
   created_at: string
 }
 
@@ -142,6 +155,16 @@ export default function Dashboard() {
 
       if (error) throw error
 
+      // Trigger confetti for high scores
+      if (wellbeingScore[0] >= 8) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#10b981', '#34d399', '#6ee7b7']
+        })
+      }
+
       // Reset form
       setWellbeingScore([5])
       setSelectedEmotions([])
@@ -167,6 +190,33 @@ export default function Dashboard() {
     return "text-green-500"
   }
 
+  const calculateStreak = (workouts: Workout[]) => {
+    if (workouts.length === 0) return 0
+
+    const sortedWorkouts = [...workouts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
+    let streak = 0
+    let currentDate = new Date()
+    currentDate.setHours(0, 0, 0, 0)
+
+    for (const workout of sortedWorkouts) {
+      const workoutDate = new Date(workout.created_at)
+      workoutDate.setHours(0, 0, 0, 0)
+
+      const daysDiff = Math.floor((currentDate.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysDiff === streak) {
+        streak++
+      } else if (daysDiff > streak) {
+        break
+      }
+    }
+
+    return streak
+  }
+
   if (loading || dataLoading) {
     return <LoadingScreen message="Loading your dashboard..." />
   }
@@ -176,89 +226,70 @@ export default function Dashboard() {
   const completedGoals = goals.filter((g) => g.status === "completed").length
   const recentWorkouts = workouts.slice(0, 3)
   const recentGoals = goals.slice(0, 3)
+  const currentStreak = calculateStreak(workouts)
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-2">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {/* Total Workouts */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Workouts</p>
-                  <p className="text-2xl font-bold text-gray-900">{workouts.length}</p>
-                </div>
-                <div className="text-green-600">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Completed Workouts */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed Workouts</p>
-                  <p className="text-2xl font-bold text-gray-900">{completedWorkouts}</p>
-                </div>
-                <div className="text-green-600">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Goals */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Goals</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeGoals}</p>
-                </div>
-                <div className="text-green-600">
-                  <Target className="w-6 h-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Completed Goals */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed Goals</p>
-                  <p className="text-2xl font-bold text-gray-900">{completedGoals}</p>
-                </div>
-                <div className="text-green-600">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <MetricCard
+            title="Total Workouts"
+            value={workouts.length.toString()}
+            numericValue={workouts.length}
+            icon={Activity}
+            subtitle="All time activities"
+            gradient="teal"
+          />
+          <MetricCard
+            title="Completed Workouts"
+            value={completedWorkouts.toString()}
+            numericValue={completedWorkouts}
+            icon={CheckCircle}
+            subtitle="Finished sessions"
+            gradient="green"
+          />
+          <MetricCard
+            title="Active Goals"
+            value={activeGoals.toString()}
+            numericValue={activeGoals}
+            icon={Target}
+            subtitle="In progress"
+            gradient="purple"
+          />
+          <MetricCard
+            title="Completed Goals"
+            value={completedGoals.toString()}
+            numericValue={completedGoals}
+            icon={TrendingUp}
+            subtitle="Achieved milestones"
+            gradient="coral"
+          />
         </div>
 
         {/* Wellbeing Section */}
-        <Card className="bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-red-500" />
-              <h2 className="text-xl font-semibold text-gray-900">How are you feeling today?</h2>
+        <Card className={cn("overflow-hidden relative transition-all duration-500", getMoodGradient(wellbeingScore[0]))}>
+          {/* Light overlay for better text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/20 pointer-events-none" />
+
+          <CardContent className="p-3 relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Heart className="w-4 h-4 text-gray-800" />
+              <h2 className="text-base font-bold text-gray-900">How are you feeling today?</h2>
             </div>
-            <p className="text-gray-600 mb-6">Rate your overall well-being and track your emotions</p>
 
             {/* Overall Score Slider */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Overall Score (1-10)</label>
-                <span className={`text-sm font-medium ${getScoreLabelColor(wellbeingScore[0])}`}>
-                  {wellbeingScore[0]}/10 - {getScoreLabel(wellbeingScore[0])}
-                </span>
+            <div className="mb-2 bg-white/60 backdrop-blur-sm rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-800">Overall Score</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {wellbeingScore[0]}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-800">
+                    {getScoreLabel(wellbeingScore[0])}
+                  </span>
+                </div>
               </div>
               <Slider
                 value={wellbeingScore}
@@ -267,63 +298,55 @@ export default function Dashboard() {
                 min={1}
                 step={1}
                 className="w-full"
+                gradientTrack
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>1 - Poor</span>
-                <span>5/10 - Average</span>
-                <span>10 - Excellent</span>
-              </div>
             </div>
 
             {/* Emotion Selection */}
-            <div className="mb-6">
-              <label className="text-sm font-medium text-gray-700 mb-3 block">
-                How are you feeling? (Select all that apply)
+            <div className="mb-2">
+              <label className="text-xs font-medium text-gray-800 mb-1 block">
+                Emotions (select all that apply)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 gap-2">
+              <div className="grid grid-cols-5 gap-1">
                 {emotionOptions.map((emotion) => (
-                  <button
+                  <EmotionButton
                     key={emotion.id}
-                    onClick={() => toggleEmotion(emotion.id)}
-                    className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                      selectedEmotions.includes(emotion.id)
-                        ? "bg-green-50 border-green-200 text-green-700"
-                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="text-lg mb-1">{emotion.emoji}</div>
-                    <div className="text-xs">{emotion.label}</div>
-                  </button>
+                    emotion={emotion}
+                    selected={selectedEmotions.includes(emotion.id)}
+                    onToggle={() => toggleEmotion(emotion.id)}
+                  />
                 ))}
               </div>
             </div>
 
             {/* Notes and Save Button */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <div className="lg:col-span-3">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Notes (optional)</label>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+              <div className="lg:col-span-2">
+                <label className="text-xs font-medium text-gray-800 mb-1 block">Notes (optional)</label>
                 <Textarea
                   value={wellbeingNotes}
                   onChange={(e) => setWellbeingNotes(e.target.value)}
-                  placeholder="Any additional thoughts about how you're feeling today..."
-                  className="min-h-[100px]"
+                  placeholder="Additional thoughts..."
+                  className="min-h-[60px] text-sm bg-white/90 border-white/30 focus-visible:ring-teal-500"
                 />
               </div>
               <div className="flex items-end">
                 <Button
                   onClick={handleSaveWellbeing}
                   disabled={isSavingWellbeing}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  variant="gradient"
+                  size="sm"
+                  className="w-full bg-white text-teal-600 hover:bg-white/90"
                 >
                   {isSavingWellbeing ? (
                     <>
-                      <Save className="w-4 h-4 mr-2 animate-pulse" />
+                      <Save className="w-3 h-3 mr-1 animate-pulse" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Check-in
+                      <Save className="w-3 h-3 mr-1" />
+                      Save
                     </>
                   )}
                 </Button>
@@ -333,82 +356,106 @@ export default function Dashboard() {
         </Card>
 
         {/* Action Cards and Recent Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           {/* Track Workout Card */}
           <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <div className="mb-4">
-                <Mountain className="w-12 h-12 mx-auto opacity-80" />
+            <CardContent className="p-3 text-center">
+              <div className="mb-2">
+                <Mountain className="w-8 h-8 mx-auto opacity-80" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Track a Workout</h3>
-              <p className="text-green-100 text-sm mb-4">Log your latest outdoor adventure</p>
+              <h3 className="text-sm font-semibold mb-1">Track Workout</h3>
               <Button
                 onClick={() => setShowWorkoutForm(true)}
                 variant="secondary"
-                className="bg-white text-green-600 hover:bg-green-50"
+                size="sm"
+                className="bg-white text-green-600 hover:bg-green-50 w-full"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Workout
+                <Plus className="w-3 h-3 mr-1" />
+                Add
               </Button>
             </CardContent>
           </Card>
 
           {/* Set Goal Card */}
           <Card className="bg-gradient-to-br from-blue-500 to-teal-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <div className="mb-4">
-                <Target className="w-12 h-12 mx-auto opacity-80" />
+            <CardContent className="p-3 text-center">
+              <div className="mb-2">
+                <Target className="w-8 h-8 mx-auto opacity-80" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Set a Goal</h3>
-              <p className="text-blue-100 text-sm mb-4">Define your next fitness milestone</p>
+              <h3 className="text-sm font-semibold mb-1">Set Goal</h3>
               <Button
                 onClick={() => setShowGoalForm(true)}
                 variant="secondary"
-                className="bg-white text-blue-600 hover:bg-blue-50"
+                size="sm"
+                className="bg-white text-blue-600 hover:bg-blue-50 w-full"
               >
-                <Target className="w-4 h-4 mr-2" />
-                Add Goal
+                <Target className="w-3 h-3 mr-1" />
+                Add
               </Button>
             </CardContent>
           </Card>
 
           {/* Recent Workouts */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
+          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Mountain className="w-5 h-5 text-green-600" />
-                  <CardTitle className="text-lg">Recent Workouts</CardTitle>
+                <div className="flex items-center gap-1">
+                  <Mountain className="w-4 h-4 text-teal-600" />
+                  <CardTitle className="text-sm">Recent Workouts</CardTitle>
                 </div>
                 <Link href="/dashboard/workouts">
-                  <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
-                    View All <ArrowRight className="w-4 h-4 ml-1" />
+                  <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 h-6 px-2 text-xs">
+                    All <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
               </div>
-              <p className="text-sm text-gray-600">Your latest outdoor activities</p>
             </CardHeader>
             <CardContent className="pt-0">
               {recentWorkouts.length > 0 ? (
-                <div className="space-y-3">
-                  {recentWorkouts.slice(0, 2).map((workout) => (
-                    <div key={workout.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <div>
-                        <p className="font-medium text-sm">{workout.activity_type}</p>
-                        <p className="text-xs text-gray-600">
-                          {workout.duration} min {workout.distance && `• ${workout.distance} km`}
-                        </p>
-                      </div>
-                      <div className="text-xs text-gray-500">{new Date(workout.created_at).toLocaleDateString()}</div>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {recentWorkouts.slice(0, 2).map((workout) => {
+                    const ActivityIcon = getActivityIcon(workout.activity_type)
+                    return (
+                      <Card key={workout.id} className="relative overflow-hidden group hover:shadow-md transition-all">
+                        {/* Colored accent strip */}
+                        <div
+                          className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-lg", getActivityGradientClass(workout.activity_type))}
+                        />
+
+                        <CardContent className="p-2 ml-1">
+                          <div className="flex items-center gap-2">
+                            {/* Activity icon */}
+                            <div className={cn("p-1.5 rounded-lg", getActivityGradientClass(workout.activity_type))}>
+                              <ActivityIcon className="w-4 h-4 text-white" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-xs capitalize truncate">
+                                {workout.title || workout.activity_type}
+                              </p>
+                              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                {workout.duration}m
+                                {workout.distance && (
+                                  <span className="ml-1">• {workout.distance}km</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <Mountain className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                  <p className="text-gray-500 text-sm mb-3">No workouts yet</p>
-                  <Button onClick={() => setShowWorkoutForm(true)} variant="outline" size="sm">
-                    Add your first workout
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-teal-100 to-blue-100 dark:from-teal-900 dark:to-blue-900 rounded-full flex items-center justify-center">
+                    <Mountain className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">No workouts yet</p>
+                  <Button onClick={() => setShowWorkoutForm(true)} variant="gradient" size="sm">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add workout
                   </Button>
                 </div>
               )}
@@ -416,56 +463,89 @@ export default function Dashboard() {
           </Card>
 
           {/* Recent Goals */}
-          <Card className="bg-white hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
+          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-green-600" />
-                  <CardTitle className="text-lg">Recent Goals</CardTitle>
+                <div className="flex items-center gap-1">
+                  <Target className="w-4 h-4 text-purple-600" />
+                  <CardTitle className="text-sm">Recent Goals</CardTitle>
                 </div>
                 <Link href="/dashboard/goals">
-                  <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
-                    View All <ArrowRight className="w-4 h-4 ml-1" />
+                  <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 h-6 px-2 text-xs">
+                    All <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
               </div>
-              <p className="text-sm text-gray-600">Your fitness objectives</p>
             </CardHeader>
             <CardContent className="pt-0">
               {recentGoals.length > 0 ? (
-                <div className="space-y-3">
-                  {recentGoals.slice(0, 2).map((goal) => (
-                    <div key={goal.id} className="p-2 bg-gray-50 rounded">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-sm">{goal.title}</p>
-                        <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            goal.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {goal.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-600">
-                          {goal.current_value}/{goal.target_value} {goal.unit}
-                        </p>
-                        <p className="text-xs text-gray-500">Due: {new Date(goal.target_date).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {recentGoals.slice(0, 2).map((goal) => {
+                    const progress = (goal.current_value / goal.target_value) * 100
+                    const daysLeft = getDaysRemaining(goal.target_date)
+
+                    return (
+                      <Card key={goal.id} className="group hover:shadow-md transition-all">
+                        <CardContent className="p-2">
+                          <div className="flex items-center gap-2">
+                            {/* Progress Ring */}
+                            <ProgressRing
+                              progress={progress}
+                              size={40}
+                              strokeWidth={4}
+                              showPercentage={false}
+                              autoColor
+                              glow
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-xs truncate">{goal.title}</h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                {goal.current_value} / {goal.target_value} {goal.unit}
+                              </p>
+                              {/* Milestone markers */}
+                              <div className="flex gap-0.5 mt-1">
+                                {[25, 50, 75, 100].map((milestone) => (
+                                  <div
+                                    key={milestone}
+                                    className={cn(
+                                      "h-1 flex-1 rounded-full transition-all",
+                                      progress >= milestone
+                                        ? "bg-gradient-to-r from-green-500 to-teal-500"
+                                        : "bg-gray-200 dark:bg-gray-700"
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <Target className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                  <p className="text-gray-500 text-sm mb-3">No goals yet</p>
-                  <Button onClick={() => setShowGoalForm(true)} variant="outline" size="sm">
-                    Set your first goal
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-full flex items-center justify-center">
+                    <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">No goals yet</p>
+                  <Button onClick={() => setShowGoalForm(true)} variant="gradient-purple" size="sm">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Set goal
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Analytics Widgets Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <StreakWidget currentStreak={currentStreak} workouts={workouts} />
+          <ActivityDistributionWidget workouts={workouts} />
+          <WeekComparisonWidget workouts={workouts} />
+          <WeatherWidget workouts={workouts} />
         </div>
       </div>
 

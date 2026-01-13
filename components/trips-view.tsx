@@ -160,9 +160,13 @@ export function TripsView() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Trips</h1>
+      <div className="space-y-4">
+        <div className="relative bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-500 rounded-xl p-6 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-white drop-shadow-lg">Trips</h1>
+            <p className="text-white/90 text-sm">Track your trail adventures</p>
+          </div>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-32 bg-gray-200 rounded-lg"></div>
@@ -174,13 +178,20 @@ export function TripsView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Trips</h1>
+    <div className="space-y-4">
+      {/* Vibrant Header */}
+      <div className="relative bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-500 rounded-xl p-6 overflow-hidden">
+        {/* Decorative overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">Trips</h1>
+          <p className="text-white/90 text-sm">Track your trail adventures</p>
+        </div>
       </div>
 
       {/* Add/Edit Trip Form */}
-      <Card>
+      <Card className="shadow-md border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
@@ -244,7 +255,11 @@ export function TripsView() {
             </div>
 
             <div className="flex gap-2">
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
+              <Button
+                type="submit"
+                variant="gradient"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+              >
                 {editingTrip ? "Update Trip" : "Add Trip"}
               </Button>
               {editingTrip && (
@@ -258,85 +273,124 @@ export function TripsView() {
       </Card>
 
       {/* Trips List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {trips.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
-              <p className="text-gray-500">Add your first trip using the form above.</p>
+          <Card className="shadow-md border-0">
+            <CardContent className="py-12 text-center">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
+                <MapPin className="w-10 h-10 text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No trips yet</h3>
+              <p className="text-gray-600">Add your first trip using the form above.</p>
             </CardContent>
           </Card>
         ) : (
-          trips.map((trip) => (
-            <Card key={trip.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{trip.trail_name}</h3>
-                      <Badge className={getActivityTypeColor(trip.activity_type)}>
-                        <Activity className="w-3 h-3 mr-1" />
-                        {getActivityTypeLabel(trip.activity_type)}
-                      </Badge>
-                    </div>
+          trips.map((trip) => {
+            const activityColorMap: Record<string, string> = {
+              hike: "from-green-500 to-emerald-500",
+              climb: "from-orange-500 to-red-500",
+              snowboard: "from-blue-500 to-cyan-500",
+              ski: "from-cyan-500 to-blue-500",
+              bike: "from-yellow-500 to-orange-500",
+              run: "from-red-500 to-pink-500",
+              walk: "from-gray-500 to-slate-500",
+              other: "from-purple-500 to-pink-500"
+            }
+            const activityGradient = activityColorMap[trip.activity_type] || "from-gray-500 to-slate-500"
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(trip.date).toLocaleDateString()}
-                      </div>
-                    </div>
+            return (
+              <Card
+                key={trip.id}
+                className="hover:shadow-xl transition-all duration-200 shadow-md border-0 overflow-hidden relative"
+                style={{
+                  background: `linear-gradient(135deg, ${activityGradient.split(' ')[0].replace('from-', '').replace('-500', '')}10 0%, white 100%)`
+                }}
+              >
+                {/* Colored left accent strip */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${activityGradient}`} />
 
-                    {trip.notes && <p className="text-gray-700 text-sm mt-2">{trip.notes}</p>}
-                  </div>
-
-                  <div className="flex gap-2 sm:flex-col sm:gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(trip)}
-                      className="flex-1 sm:flex-none"
-                    >
-                      <Edit2 className="w-4 h-4 sm:mr-0 mr-2" />
-                      <span className="sm:hidden">Edit</span>
-                    </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+                <CardContent className="p-4 ml-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-2 rounded-lg bg-gradient-to-br ${activityGradient} shadow-sm`}>
+                            <Activity className="w-5 h-5 text-white" />
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-900">{trip.trail_name}</h3>
+                        </div>
+                        <Badge
+                          className="border-0 shadow-sm"
+                          style={{
+                            background: `linear-gradient(135deg, ${activityGradient.split(' ')[0].replace('from-', '').replace('-500', '')}20 0%, ${activityGradient.split(' ')[1].replace('to-', '').replace('-500', '')}20 100%)`,
+                            color: activityGradient.split(' ')[0].replace('from-', '').replace('-500', '-700')
+                          }}
                         >
-                          <Trash2 className="w-4 h-4 sm:mr-0 mr-2" />
-                          <span className="sm:hidden">Delete</span>
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Trip</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this trip to {trip.trail_name}? This action cannot be
-                            undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(trip.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                          {getActivityTypeLabel(trip.activity_type)}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-xs text-gray-600 bg-white/60 rounded-lg px-2 py-1 w-fit">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span className="font-medium">{new Date(trip.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                      </div>
+
+                      {trip.notes && (
+                        <div className="bg-white/80 rounded-lg p-2 border border-gray-100">
+                          <p className="text-gray-700 text-xs leading-relaxed">{trip.notes}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 sm:flex-col sm:gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(trip)}
+                        className="flex-1 sm:flex-none h-8"
+                      >
+                        <Edit2 className="w-3 h-3 sm:mr-0 mr-2" />
+                        <span className="sm:hidden">Edit</span>
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent h-8"
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Trash2 className="w-3 h-3 sm:mr-0 mr-2" />
+                            <span className="sm:hidden">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Trip</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this trip to {trip.trail_name}? This action cannot be
+                              undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(trip.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            )
+          })
         )}
       </div>
     </div>

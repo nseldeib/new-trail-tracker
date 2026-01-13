@@ -2,10 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ActivityDistribution, DifficultyDistribution } from '@/lib/types/analytics'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Tooltip } from 'recharts'
 import { useState } from 'react'
+import { useSpring, animated } from 'react-spring'
 import { ChartSkeleton } from './chart-skeleton'
 import { EmptyState } from './empty-state'
+import { getActivityColor } from '@/lib/utils/colors'
+import { cn } from '@/lib/utils'
 
 interface ActivityBreakdownProps {
   activityData: ActivityDistribution[]
@@ -15,23 +18,12 @@ interface ActivityBreakdownProps {
 
 type ViewMode = 'activity' | 'difficulty'
 
-// Color palette for charts
-const ACTIVITY_COLORS: Record<string, string> = {
-  running: '#16a34a',
-  climbing: '#dc2626',
-  hiking: '#ca8a04',
-  snowboarding: '#2563eb',
-  cycling: '#7c3aed',
-  swimming: '#0891b2',
-  yoga: '#db2777',
-  strength: '#ea580c'
-}
-
+// Color palette for difficulty
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: '#22c55e',
-  Moderate: '#eab308',
+  Easy: '#10b981',
+  Moderate: '#f59e0b',
   Hard: '#f97316',
-  Expert: '#dc2626'
+  Expert: '#ef4444'
 }
 
 const ACTIVITY_EMOJIS: Record<string, string> = {
@@ -47,6 +39,15 @@ const ACTIVITY_EMOJIS: Record<string, string> = {
 
 export function ActivityBreakdown({ activityData, difficultyData, loading }: ActivityBreakdownProps) {
   const [view, setView] = useState<ViewMode>('activity')
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [hiddenSegments, setHiddenSegments] = useState<Set<string>>(new Set())
+
+  // Entrance animation
+  const chartAnimation = useSpring({
+    from: { opacity: 0, transform: 'scale(0.8)' },
+    to: { opacity: 1, transform: 'scale(1)' },
+    config: { tension: 200, friction: 20 }
+  })
 
   if (loading) {
     return <ChartSkeleton height="h-96" />
@@ -85,27 +86,70 @@ export function ActivityBreakdown({ activityData, difficultyData, loading }: Act
         percentage: item.percentage
       }))
 
+  // Filter out hidden segments
+  const filteredPieData = pieData.filter(item => !hiddenSegments.has(item.name))
+
   // Get color for pie slice
   const getColor = (name: string): string => {
     if (view === 'activity') {
-      return ACTIVITY_COLORS[name.toLowerCase()] || '#64748b'
+      return getActivityColor(name.toLowerCase())
     } else {
       return DIFFICULTY_COLORS[name] || '#64748b'
     }
+  }
+
+  // Toggle segment visibility
+  const toggleSegment = (name: string) => {
+    setHiddenSegments(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(name)) {
+        newSet.delete(name)
+      } else {
+        newSet.add(name)
+      }
+      return newSet
+    })
+  }
+
+  // Active shape render for hover effect
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
+
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+      </g>
+    )
   }
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="text-sm font-medium text-gray-900">{payload[0].name}</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Count: <span className="font-semibold">{payload[0].value}</span>
+        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl backdrop-blur-sm">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            {view === 'activity' && ACTIVITY_EMOJIS[payload[0].name.toLowerCase()]} {payload[0].name}
           </p>
-          <p className="text-sm text-gray-600">
-            Percentage: <span className="font-semibold">{payload[0].payload.percentage}%</span>
-          </p>
+          <div className="space-y-1 text-xs">
+            <p className="text-gray-600 dark:text-gray-400">
+              Count: <span className="font-semibold" style={{ color: getColor(payload[0].name) }}>
+                {payload[0].value} workouts
+              </span>
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Percentage: <span className="font-semibold" style={{ color: getColor(payload[0].name) }}>
+                {payload[0].payload.percentage}%
+              </span>
+            </p>
+          </div>
         </div>
       )
     }
@@ -148,100 +192,152 @@ export function ActivityBreakdown({ activityData, difficultyData, loading }: Act
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart */}
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={300}>
+          {/* Donut Chart */}
+          <animated.div style={chartAnimation} className="flex items-center justify-center">
+            <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
-                  data={pieData}
+                  data={filteredPieData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={(entry: any) => `${entry.percentage}%`}
-                  outerRadius={100}
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
                   fill="#8884d8"
                   dataKey="value"
+                  activeIndex={activeIndex !== null ? activeIndex : undefined}
+                  activeShape={renderActiveShape}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                  animationDuration={800}
+                  animationBegin={0}
                 >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
+                  {filteredPieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={getColor(entry.name)}
+                      className="transition-all duration-200 hover:opacity-90 cursor-pointer"
+                    />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-          </div>
 
-          {/* Data Table */}
-          <div className="space-y-3">
+            {/* Center label */}
+            {filteredPieData.length > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    {filteredPieData.reduce((sum, item) => sum + item.value, 0)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {view === 'activity' ? 'Workouts' : 'Total'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </animated.div>
+
+          {/* Interactive Legend */}
+          <div className="space-y-2">
             {view === 'activity' ? (
-              activityData.map((item, index) => (
-                <div key={index} className="flex items-center gap-3">
+              activityData.map((item, index) => {
+                const isHidden = hiddenSegments.has(item.activityType)
+                return (
                   <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: ACTIVITY_COLORS[item.activityType.toLowerCase()] }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {ACTIVITY_EMOJIS[item.activityType.toLowerCase()] || ''} {item.activityType.charAt(0).toUpperCase() + item.activityType.slice(1)}
-                      </span>
-                      <span className="text-sm text-gray-600">{item.count} workouts</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full transition-all"
-                          style={{
-                            width: `${item.percentage}%`,
-                            backgroundColor: ACTIVITY_COLORS[item.activityType.toLowerCase()]
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500 w-12 text-right">{item.percentage}%</span>
-                    </div>
-                    <div className="flex gap-3 mt-1 text-xs text-gray-500">
-                      {item.totalDuration > 0 && (
-                        <span>{Math.round(item.totalDuration / 60)}h {Math.round(item.totalDuration % 60)}m</span>
-                      )}
-                      {item.totalDistance > 0 && (
-                        <span>{item.totalDistance.toFixed(1)} mi</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              difficultyData.map((item, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: DIFFICULTY_COLORS[item.difficulty] }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{item.difficulty}</span>
-                      <span className="text-sm text-gray-600">{item.count} workouts</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full transition-all"
-                          style={{
-                            width: `${item.percentage}%`,
-                            backgroundColor: DIFFICULTY_COLORS[item.difficulty]
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500 w-12 text-right">{item.percentage}%</span>
-                    </div>
-                    {item.avgDuration > 0 && (
-                      <div className="mt-1 text-xs text-gray-500">
-                        Avg: {Math.round(item.avgDuration)} min
-                      </div>
+                    key={index}
+                    onClick={() => toggleSegment(item.activityType)}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-lg transition-all duration-200 cursor-pointer",
+                      isHidden
+                        ? "opacity-40 hover:opacity-60 bg-gray-50 dark:bg-gray-800"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm"
                     )}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0 transition-all"
+                      style={{ backgroundColor: getActivityColor(item.activityType.toLowerCase()) }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {ACTIVITY_EMOJIS[item.activityType.toLowerCase()] || ''} {item.activityType.charAt(0).toUpperCase() + item.activityType.slice(1)}
+                        </span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} workouts</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: isHidden ? '0%' : `${item.percentage}%`,
+                              backgroundColor: getActivityColor(item.activityType.toLowerCase())
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                          {item.percentage}%
+                        </span>
+                      </div>
+                      <div className="flex gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {item.totalDuration > 0 && (
+                          <span>{Math.round(item.totalDuration / 60)}h {Math.round(item.totalDuration % 60)}m</span>
+                        )}
+                        {item.totalDistance > 0 && (
+                          <span>{item.totalDistance.toFixed(1)} mi</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
+            ) : (
+              difficultyData.map((item, index) => {
+                const isHidden = hiddenSegments.has(item.difficulty)
+                return (
+                  <div
+                    key={index}
+                    onClick={() => toggleSegment(item.difficulty)}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-lg transition-all duration-200 cursor-pointer",
+                      isHidden
+                        ? "opacity-40 hover:opacity-60 bg-gray-50 dark:bg-gray-800"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm"
+                    )}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0 transition-all"
+                      style={{ backgroundColor: DIFFICULTY_COLORS[item.difficulty] }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.difficulty}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{item.count} workouts</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: isHidden ? '0%' : `${item.percentage}%`,
+                              backgroundColor: DIFFICULTY_COLORS[item.difficulty]
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                          {item.percentage}%
+                        </span>
+                      </div>
+                      {item.avgDuration > 0 && (
+                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Avg: {Math.round(item.avgDuration)} min
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         </div>

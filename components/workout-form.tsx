@@ -7,8 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { GradientHeader } from "@/components/ui/gradient-header"
+import { FormAlert } from "@/components/ui/form-alert"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { createClient } from "@/lib/supabase/client"
-import { X, Mountain } from "lucide-react"
+import { ACTIVITY_TYPES, DIFFICULTY_LEVELS } from "@/lib/activity-types"
+import { GRADIENT, BUTTON_COMMON, MODAL } from "@/lib/styles"
+import { Mountain, Plus } from "lucide-react"
 
 interface Workout {
   id: string
@@ -121,36 +126,19 @@ export function WorkoutForm({ workout, onClose, onSave }: WorkoutFormProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-              <Mountain className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{workout ? "Edit Workout" : "Add New Workout"}</h2>
-              <p className="text-sm text-gray-600">Update your workout details</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCloseForm}
-            className="h-10 w-10 p-0 hover:bg-white/50 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
+    <div className={MODAL.overlay}>
+      <div className={MODAL.content}>
+        <GradientHeader
+          icon={Mountain}
+          title={workout ? "Edit Workout" : "Add New Workout"}
+          subtitle={workout ? "Update your workout details" : "Track your outdoor adventure"}
+          theme="workout"
+          onClose={handleCloseForm}
+        />
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
+          {error && <FormAlert type="error" message={error} />}
 
           {/* Activity Type and Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -166,14 +154,11 @@ export function WorkoutForm({ workout, onClose, onSave }: WorkoutFormProps) {
                   <SelectValue placeholder="Select activity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="running">🏃‍♂️ Running</SelectItem>
-                  <SelectItem value="climbing">🧗‍♂️ Climbing</SelectItem>
-                  <SelectItem value="hiking">🥾 Hiking</SelectItem>
-                  <SelectItem value="snowboarding">🏂 Snowboarding</SelectItem>
-                  <SelectItem value="cycling">🚴‍♂️ Cycling</SelectItem>
-                  <SelectItem value="swimming">🏊‍♂️ Swimming</SelectItem>
-                  <SelectItem value="yoga">🧘‍♀️ Yoga</SelectItem>
-                  <SelectItem value="strength">💪 Strength Training</SelectItem>
+                  {ACTIVITY_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.emoji} {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -298,10 +283,11 @@ export function WorkoutForm({ workout, onClose, onSave }: WorkoutFormProps) {
                   <SelectValue placeholder="Select intensity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Easy">🟢 Easy</SelectItem>
-                  <SelectItem value="Moderate">🟡 Moderate</SelectItem>
-                  <SelectItem value="Hard">🟠 Hard</SelectItem>
-                  <SelectItem value="Expert">🔴 Expert</SelectItem>
+                  {DIFFICULTY_LEVELS.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.emoji} {level.value}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -326,24 +312,25 @@ export function WorkoutForm({ workout, onClose, onSave }: WorkoutFormProps) {
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-3"
+              className={`flex-1 ${GRADIENT.workout.button} ${GRADIENT.workout.buttonHover} text-white py-3 ${BUTTON_COMMON}`}
             >
               {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
                   {workout ? "Updating..." : "Creating..."}
-                </>
-              ) : workout ? (
-                "Update Workout"
+                </div>
               ) : (
-                "Create Workout"
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {workout ? "Update Workout" : "Create Workout"}
+                </>
               )}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={handleCloseForm}
-              className="px-8 bg-white hover:bg-gray-50"
+              className="px-8 bg-white hover:bg-gray-50 border-2 hover:border-gray-300 transition-all duration-200"
               disabled={loading}
             >
               Cancel

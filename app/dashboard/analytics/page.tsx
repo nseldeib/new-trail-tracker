@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
 import { DashboardLayout } from '@/components/dashboard-layout'
-import { TimeRange, ActivityTypeFilter, AnalyticsData } from '@/lib/types/analytics'
+import { TimeRange, ActivityTypeFilter, AnalyticsData, Achievement, TrainingInsight } from '@/lib/types/analytics'
 import { StatsCalculator } from '@/lib/services/stats-calculator'
 import { createClient } from '@/lib/supabase/client'
 import { StatsOverview } from '@/components/analytics/stats-overview'
 import { ActivityChart } from '@/components/analytics/activity-chart'
 import { ActivityBreakdown } from '@/components/analytics/activity-breakdown'
 import { PersonalRecords } from '@/components/analytics/personal-records'
+import { AchievementsPanel } from '@/components/analytics/achievements-panel'
+import { TrainingInsightsPanel } from '@/components/analytics/training-insights-panel'
 import { TimeRangeSelector } from '@/components/analytics/time-range-selector'
 import { ActivityTypeFilter as ActivityFilter } from '@/components/analytics/activity-type-filter'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -24,6 +26,8 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('month')
   const [activityType, setActivityType] = useState<ActivityTypeFilter>('all')
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [insights, setInsights] = useState<TrainingInsight[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,6 +52,7 @@ export default function AnalyticsPage() {
       const supabase = createClient()
       const calculator = new StatsCalculator(supabase)
 
+      // Fetch main analytics data
       const data = await calculator.calculateStats({
         userId: user.id,
         timeRange,
@@ -55,6 +60,23 @@ export default function AnalyticsPage() {
       })
 
       setAnalyticsData(data)
+
+      // Fetch all workouts for achievements and insights (unfiltered)
+      const { data: allWorkouts } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+
+      if (allWorkouts && allWorkouts.length > 0) {
+        // Calculate achievements
+        const achievementsData = calculator.checkAchievements(allWorkouts)
+        setAchievements(achievementsData)
+
+        // Generate insights
+        const insightsData = calculator.generateTrainingInsights(allWorkouts)
+        setInsights(insightsData)
+      }
     } catch (err) {
       console.error('Error fetching analytics:', err)
       setError('Failed to load analytics data. Please try again.')
@@ -83,14 +105,19 @@ export default function AnalyticsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
-          <p className="text-gray-600">Track your progress and view detailed statistics</p>
+        {/* Vibrant Header */}
+        <div className="relative bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-xl p-6 mb-4 overflow-hidden">
+          {/* Decorative overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">Analytics</h1>
+            <p className="text-white/90 text-sm">Track your progress and view detailed statistics</p>
+          </div>
         </div>
 
         {/* Filters Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8 p-4 bg-white rounded-lg border border-gray-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 p-4 bg-white rounded-lg shadow-sm border-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Time Range</label>
@@ -132,7 +159,7 @@ export default function AnalyticsPage() {
         />
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <ActivityChart
             data={analyticsData?.timeSeries || []}
             loading={loading}
@@ -152,6 +179,22 @@ export default function AnalyticsPage() {
           records={analyticsData?.personalRecords || {}}
           loading={loading}
         />
+
+        {/* Achievements */}
+        <div className="mt-8">
+          <AchievementsPanel
+            achievements={achievements}
+            loading={loading}
+          />
+        </div>
+
+        {/* Training Insights */}
+        <div className="mt-8">
+          <TrainingInsightsPanel
+            insights={insights}
+            loading={loading}
+          />
+        </div>
 
         {/* Last Updated */}
         {analyticsData && !loading && (

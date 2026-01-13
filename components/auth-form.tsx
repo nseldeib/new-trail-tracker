@@ -6,8 +6,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FormAlert } from "@/components/ui/form-alert"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useAuth } from "./auth-provider"
-import { ArrowLeft, Mountain, AlertCircle, CheckCircle } from "lucide-react"
+import { GRADIENT, BUTTON_COMMON } from "@/lib/styles"
+import { ArrowLeft, Mountain } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -137,14 +140,14 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
+    <div className={`min-h-screen ${GRADIENT.page} flex items-center justify-center p-4`}>
       <div className="w-full max-w-md">
         {/* Back to home link */}
         <div className="mb-4">
           <Button
             onClick={handleBackToHome}
             variant="ghost"
-            className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm font-medium p-0"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 hover:bg-white/50 text-sm font-medium p-2 rounded-lg"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to home
@@ -153,10 +156,10 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
 
         {/* Logo/Header */}
         <div className="text-center mb-6">
-          <div className="text-green-600 mb-3">
-            <Mountain className="w-10 h-10 mx-auto" />
+          <div className={`inline-flex items-center justify-center w-16 h-16 ${GRADIENT.workout.header} rounded-2xl shadow-xl mb-3`}>
+            <Mountain className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Trail Tracker</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Trail Tracker</h1>
           <p className="text-gray-600 text-sm">Welcome back to your adventure log</p>
         </div>
 
@@ -178,11 +181,11 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
                 <Button
                   onClick={handleDemoLogin}
                   disabled={demoLoading || loading}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`w-full ${GRADIENT.demo.button} ${GRADIENT.demo.buttonHover} text-white mb-4 ${BUTTON_COMMON} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {demoLoading ? (
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <LoadingSpinner />
                       Signing in to demo...
                     </div>
                   ) : (
@@ -204,31 +207,26 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
 
             {/* Success Message */}
             {success && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 text-green-700">
-                  <CheckCircle className="w-4 h-4" />
-                  <p className="text-sm">{success}</p>
-                </div>
+              <div className="mb-4">
+                <FormAlert type="success" message={success} />
               </div>
             )}
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center gap-2 text-red-700">
-                  <AlertCircle className="w-4 h-4" />
-                  <p className="text-sm">{error}</p>
-                </div>
-                {error.includes("Demo account not found") && (
-                  <div className="mt-2 text-xs text-red-600">
-                    <p>To fix this:</p>
-                    <ol className="list-decimal list-inside mt-1 space-y-1">
-                      <li>Go to your Supabase project</li>
-                      <li>Run the demo user creation script</li>
-                      <li>Or create a user manually with email: demo@workouttracker.com</li>
-                    </ol>
-                  </div>
-                )}
+              <div className="mb-4">
+                <FormAlert type="error" message={error}>
+                  {error.includes("Demo account not found") && (
+                    <div className="mt-2 text-xs text-red-600">
+                      <p>To fix this:</p>
+                      <ol className="list-decimal list-inside mt-1 space-y-1">
+                        <li>Go to your Supabase project</li>
+                        <li>Run the demo user creation script</li>
+                        <li>Or create a user manually with email: demo@workouttracker.com</li>
+                      </ol>
+                    </div>
+                  )}
+                </FormAlert>
               </div>
             )}
 
@@ -269,11 +267,11 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
               <Button
                 type="submit"
                 disabled={loading || demoLoading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                className={`w-full ${GRADIENT.workout.button} ${GRADIENT.workout.buttonHover} text-white ${BUTTON_COMMON} disabled:opacity-50`}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <LoadingSpinner />
                     {isSignUp ? "Creating account..." : "Signing in..."}
                   </div>
                 ) : isSignUp ? (
@@ -289,14 +287,14 @@ export function AuthForm({ mode = "signin" }: AuthFormProps) {
               {isSignUp ? (
                 <p className="text-gray-600 text-sm">
                   Already have an account?{" "}
-                  <Link href="/auth/signin" className="text-green-600 font-medium hover:text-green-700">
+                  <Link href="/auth/signin" className="text-teal-600 font-semibold hover:text-teal-700 transition-colors">
                     Sign in
                   </Link>
                 </p>
               ) : (
                 <p className="text-gray-600 text-sm">
                   Don't have an account?{" "}
-                  <Link href="/auth/signup" className="text-green-600 font-medium hover:text-green-700">
+                  <Link href="/auth/signup" className="text-teal-600 font-semibold hover:text-teal-700 transition-colors">
                     Sign up
                   </Link>
                 </p>

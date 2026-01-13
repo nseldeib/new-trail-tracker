@@ -119,8 +119,8 @@ export default function NewWorkoutPage() {
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50">
         <div className="max-w-4xl mx-auto p-6">
-          {/* Header */}
-          <div className="mb-8">
+          {/* Vibrant Header */}
+          <div className="mb-6">
             <Button
               variant="ghost"
               onClick={() => router.back()}
@@ -129,12 +129,18 @@ export default function NewWorkoutPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Workouts
             </Button>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full mb-4">
-                <Plus className="w-8 h-8 text-white" />
+
+            <div className="relative bg-gradient-to-br from-teal-500 via-green-500 to-blue-500 rounded-xl p-8 overflow-hidden">
+              {/* Decorative overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+              <div className="relative z-10 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl mb-4 border border-white/30 shadow-lg">
+                  <Plus className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Add New Workout</h1>
+                <p className="text-white/90">Track your outdoor adventure and fitness progress</p>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Workout</h1>
-              <p className="text-gray-600">Track your outdoor adventure and fitness progress</p>
             </div>
           </div>
 
@@ -151,8 +157,8 @@ export default function NewWorkoutPage() {
                 </CardHeader>
                 <CardContent>
                   {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-800 text-sm">{error}</p>
+                    <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-lg shadow-sm">
+                      <p className="text-red-800 text-sm font-medium">{error}</p>
                     </div>
                   )}
 
@@ -341,7 +347,7 @@ export default function NewWorkoutPage() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-3 text-base font-medium"
+                        className="flex-1 bg-gradient-to-r from-teal-600 via-green-600 to-blue-600 hover:from-teal-700 hover:via-green-700 hover:to-blue-700 text-white py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         {loading ? (
                           <>
@@ -359,7 +365,7 @@ export default function NewWorkoutPage() {
                         type="button"
                         variant="outline"
                         onClick={() => router.back()}
-                        className="px-8 bg-white hover:bg-gray-50"
+                        className="px-8 bg-white hover:bg-gray-50 border-2 hover:border-gray-300 transition-all duration-200"
                         disabled={loading}
                       >
                         Cancel

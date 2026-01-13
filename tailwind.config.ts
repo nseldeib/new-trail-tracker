@@ -66,6 +66,30 @@ const config: Config = {
           800: "#115e59",
           900: "#134e4a",
         },
+        // Vibrant coral color palette
+        coral: {
+          50: "#fff1f2",
+          100: "#ffe4e6",
+          200: "#fecdd3",
+          300: "#fda4af",
+          400: "#fb7185",
+          500: "#f43f5e",
+          600: "#e11d48",
+          700: "#be123c",
+          800: "#9f1239",
+          900: "#881337",
+        },
+        // Activity-specific colors
+        activity: {
+          running: "#ef4444", // red-500
+          climbing: "#f97316", // orange-500
+          hiking: "#84cc16", // lime-500
+          snowboarding: "#06b6d4", // cyan-500
+          cycling: "#3b82f6", // blue-500
+          swimming: "#0ea5e9", // sky-500
+          yoga: "#a855f7", // purple-500
+          strength: "#ec4899", // pink-500
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

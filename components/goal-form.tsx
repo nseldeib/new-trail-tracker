@@ -1,16 +1,19 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { GradientHeader } from "@/components/ui/gradient-header"
+import { FormAlert } from "@/components/ui/form-alert"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { createClient } from "@/lib/supabase/client"
-import { X } from "lucide-react"
+import { GOAL_ACTIVITY_TYPES } from "@/lib/activity-types"
+import { GRADIENT, BUTTON_COMMON, MODAL } from "@/lib/styles"
+import { Target, Plus } from "lucide-react"
 
 interface Goal {
   id: string
@@ -96,34 +99,24 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
     }
   }
 
-  const activityTypes = [
-    { value: "general", label: "🎯 General" },
-    { value: "running", label: "🏃‍♂️ Running" },
-    { value: "climbing", label: "🧗‍♂️ Climbing" },
-    { value: "hiking", label: "🥾 Hiking" },
-    { value: "snowboarding", label: "🏂 Snowboarding" },
-    { value: "cycling", label: "🚴‍♂️ Cycling" },
-    { value: "swimming", label: "🏊‍♂️ Swimming" },
-  ]
+  const handleCloseForm = () => {
+    setError("")
+    onClose()
+  }
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">{goal ? "Edit Goal" : "Create New Goal"}</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 hover:bg-gray-100">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
+    <div className={MODAL.overlay}>
+      <div className={MODAL.content}>
+        <GradientHeader
+          icon={Target}
+          title={goal ? "Edit Goal" : "Create New Goal"}
+          subtitle={goal ? "Update your goal details" : "Set a new fitness milestone"}
+          theme="goal"
+          onClose={handleCloseForm}
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && <FormAlert type="error" message={error} />}
 
           <div className="space-y-2">
             <Label htmlFor="activity_type">Activity Type</Label>
@@ -135,9 +128,9 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
                 <SelectValue placeholder="Choose activity type" />
               </SelectTrigger>
               <SelectContent>
-                {activityTypes.map((type) => (
+                {GOAL_ACTIVITY_TYPES.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
-                    {type.label}
+                    {type.emoji} {type.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -201,15 +194,34 @@ export function GoalForm({ goal, onClose, onSave }: GoalFormProps) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">
-              {loading ? "Saving..." : goal ? "Update Goal" : "Create Goal"}
+            <Button
+              type="submit"
+              disabled={loading}
+              className={`flex-1 ${GRADIENT.goal.button} ${GRADIENT.goal.buttonHover} text-white ${BUTTON_COMMON}`}
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner />
+                  {goal ? "Updating..." : "Creating..."}
+                </div>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {goal ? "Update Goal" : "Create Goal"}
+                </>
+              )}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose} className="px-6 bg-transparent">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseForm}
+              className="px-8 bg-white hover:bg-gray-50 border-2 hover:border-gray-300 transition-all duration-200"
+            >
               Cancel
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   )
 }

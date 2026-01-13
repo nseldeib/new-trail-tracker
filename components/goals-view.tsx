@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { GoalForm } from "./goal-form"
 import { Plus, Target, Trophy, CheckCircle, Star, Edit, Trash2, Circle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getActivityGradient, getActivityColor } from "@/lib/utils/colors"
+import { ProgressRing } from "@/components/charts/progress-ring"
+import { cn } from "@/lib/utils"
 
 interface Goal {
   id: string
@@ -106,25 +109,32 @@ export function GoalsView({ goals, onRefresh }: GoalsViewProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">Your Goals</h1>
-          <p className="text-gray-600">Set and achieve your outdoor adventure goals</p>
+      {/* Vibrant Header */}
+      <div className="relative bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-xl p-6 mb-4 overflow-hidden">
+        {/* Decorative overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">Your Goals</h1>
+            <p className="text-white/90 text-sm">Set and achieve your fitness milestones</p>
+          </div>
+          <Button
+            onClick={() => router.push("/dashboard/goals/new")}
+            variant="secondary"
+            className="bg-white/90 hover:bg-white text-purple-600 shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Goal
+          </Button>
         </div>
-        <Button
-          onClick={() => router.push("/dashboard/goals/new")}
-          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg transition-all shadow-lg hover:shadow-xl"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Goal
-        </Button>
       </div>
 
       {goals.length === 0 ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center max-w-md">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center">
-              <Target className="w-12 h-12 text-green-600" />
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-purple rounded-full flex items-center justify-center shadow-xl">
+              <Target className="w-12 h-12 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Ready to set your first goal?</h2>
             <p className="text-gray-600 mb-6 leading-relaxed">
@@ -133,7 +143,8 @@ export function GoalsView({ goals, onRefresh }: GoalsViewProps) {
             </p>
             <Button
               onClick={() => router.push("/dashboard/goals/new")}
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-8 py-3 rounded-lg transition-all shadow-lg hover:shadow-xl text-base font-semibold"
+              variant="gradient-purple"
+              className="shadow-lg hover:shadow-xl"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Goal
@@ -141,90 +152,113 @@ export function GoalsView({ goals, onRefresh }: GoalsViewProps) {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {goals.map((goal, index) => (
             <Card
               key={goal.id}
-              className="bg-white shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-green-200"
+              className="relative overflow-hidden bg-white hover:shadow-xl transition-all duration-200 group border-0"
+              style={{
+                background: goal.activity_type
+                  ? `linear-gradient(135deg, ${getActivityColor(goal.activity_type || "general")}08 0%, white 100%)`
+                  : 'linear-gradient(135deg, rgba(168, 85, 247, 0.03) 0%, white 100%)'
+              }}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => toggleGoalCompletion(goal)} className="flex-shrink-0">
-                      {goal.is_completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-gray-400 hover:text-green-600 transition-colors" />
-                      )}
-                    </button>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getActivityIcon(goal.activity_type || "general")}</span>
-                      <h3 className="font-semibold text-gray-900 text-base leading-tight">
+              {/* Colored accent strip */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg transition-all group-hover:w-2"
+                style={{
+                  background: goal.activity_type
+                    ? getActivityGradient(goal.activity_type || "general")
+                    : 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)'
+                }}
+              />
+
+              <CardContent className="p-4 ml-2">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    {/* Activity icon with complementary background */}
+                    <div
+                      className="p-2.5 rounded-md flex items-center justify-center shadow-sm flex-shrink-0 border border-white"
+                      style={{
+                        background: goal.activity_type === 'running' ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' :
+                                   goal.activity_type === 'climbing' ? 'linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)' :
+                                   goal.activity_type === 'hiking' ? 'linear-gradient(135deg, #d9f99d 0%, #bef264 100%)' :
+                                   goal.activity_type === 'snowboarding' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' :
+                                   goal.activity_type === 'cycling' ? 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)' :
+                                   goal.activity_type === 'swimming' ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)' :
+                                   goal.activity_type === 'yoga' ? 'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)' :
+                                   goal.activity_type === 'strength' ? 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)' :
+                                   'linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%)'
+                      }}
+                    >
+                      <span className="text-2xl">{getActivityIcon(goal.activity_type || "general")}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-base leading-tight truncate">
                         {goal.title || `Goal ${index + 1}`}
                       </h3>
+                      {goal.is_completed && (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 text-xs font-medium mt-1 inline-flex">
+                          ✓ Achieved
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"
-                    >
-                      <Star className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleEditGoal(goal)}
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50"
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-purple-600 hover:bg-purple-50"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-3 h-3" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => deleteGoal(goal.id)}
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {goal.is_completed && (
-                    <Badge className="bg-green-100 text-green-800 border border-green-200 text-xs font-medium">
-                      ✅ Achieved
-                    </Badge>
-                  )}
-
-                  {goal.target_date && (
-                    <div className="text-sm text-gray-500">
-                      🗓️ Target: {new Date(goal.target_date).toLocaleDateString()}
-                    </div>
-                  )}
-
+                <div className="space-y-2">
                   {goal.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{goal.description}</p>
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{goal.description}</p>
                   )}
 
                   {goal.target_value && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span className="font-medium">Progress</span>
-                        <span className="font-mono">
-                          {goal.current_value}/{goal.target_value} {goal.unit}
-                        </span>
+                    <div className="flex items-center gap-3">
+                      {/* Progress Ring */}
+                      <ProgressRing
+                        progress={(goal.current_value / goal.target_value) * 100}
+                        size={50}
+                        strokeWidth={5}
+                        showPercentage={false}
+                        autoColor
+                        glow
+                      />
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-600 font-medium">
+                          {goal.current_value} / {goal.target_value} {goal.unit}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {Math.round((goal.current_value / goal.target_value) * 100)}% complete
+                        </div>
+                        {goal.target_date && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            🗓️ {new Date(goal.target_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                          className="bg-gradient-to-r from-green-500 to-green-600 h-2.5 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min((goal.current_value / goal.target_value) * 100, 100)}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-gray-500 text-right">
-                        {Math.round((goal.current_value / goal.target_value) * 100)}% complete
-                      </div>
+                    </div>
+                  )}
+
+                  {!goal.target_value && goal.target_date && (
+                    <div className="text-xs text-gray-500">
+                      🗓️ Target: {new Date(goal.target_date).toLocaleDateString()}
                     </div>
                   )}
                 </div>
