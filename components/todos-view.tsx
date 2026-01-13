@@ -34,6 +34,12 @@ const categoryLabels = {
   training: "Training",
 }
 
+const categoryColors = {
+  gear: "from-blue-500 to-cyan-500",
+  logistics: "from-green-500 to-teal-500",
+  training: "from-purple-500 to-pink-500"
+}
+
 export function TodosView() {
   const supabase = createClient()
   const { user } = useAuth()
@@ -242,8 +248,7 @@ export function TodosView() {
             <Button
               type="submit"
               disabled={submitting || !formData.title.trim() || !formData.category}
-              variant="gradient"
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+              variant="gradient-amber"
             >
               {submitting ? "Adding..." : "Add Task"}
             </Button>
@@ -258,12 +263,6 @@ export function TodosView() {
           const Icon = categoryIcons[category]
 
           if (categoryTodos.length === 0) return null
-
-          const categoryColors = {
-            gear: "from-blue-500 to-cyan-500",
-            logistics: "from-green-500 to-teal-500",
-            training: "from-purple-500 to-pink-500"
-          }
 
           return (
             <Card key={category} className="shadow-md border-0 overflow-hidden">
@@ -284,14 +283,15 @@ export function TodosView() {
                   {categoryTodos.map((todo) => (
                     <div
                       key={todo.id}
-                      className={`relative flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 overflow-hidden ${
+                      className={`relative flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 overflow-hidden ${
                         todo.completed
                           ? "bg-gray-50 border-gray-200"
-                          : `bg-gradient-to-r ${categoryColors[category]}08 border-transparent hover:shadow-md`
+                          : category === 'gear'
+                            ? "bg-blue-50/50 border-blue-200 hover:border-blue-300 hover:shadow-md"
+                            : category === 'logistics'
+                            ? "bg-green-50/50 border-green-200 hover:border-green-300 hover:shadow-md"
+                            : "bg-purple-50/50 border-purple-200 hover:border-purple-300 hover:shadow-md"
                       }`}
-                      style={!todo.completed ? {
-                        boxShadow: `0 0 0 1px ${category === 'gear' ? 'rgba(59, 130, 246, 0.2)' : category === 'logistics' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.2)'}`
-                      } : {}}
                     >
                       {/* Colorful left accent */}
                       {!todo.completed && (
