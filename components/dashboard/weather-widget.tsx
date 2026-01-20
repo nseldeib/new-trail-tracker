@@ -10,15 +10,22 @@ interface WeatherWidgetProps {
   workouts: Array<{
     location?: string
   }>
+  mockWeather?: any
 }
 
-export function WeatherWidget({ workouts }: WeatherWidgetProps) {
-  const [weather, setWeather] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+export function WeatherWidget({ workouts, mockWeather }: WeatherWidgetProps) {
+  const [weather, setWeather] = useState<any>(mockWeather || null)
+  const [loading, setLoading] = useState(!mockWeather)
   const [error, setError] = useState<string | null>(null)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
 
   useEffect(() => {
+    // Skip fetching if mock data is provided
+    if (mockWeather) {
+      setWeather(mockWeather)
+      setLoading(false)
+      return
+    }
     async function loadWeather() {
       try {
         setLoading(true)
@@ -91,7 +98,7 @@ export function WeatherWidget({ workouts }: WeatherWidgetProps) {
     )
   }
 
-  if (error || !weather) {
+  if (error || !weather || !weather.current) {
     return (
       <Card className="bg-white dark:bg-gray-800">
         <CardHeader>

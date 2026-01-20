@@ -67,25 +67,131 @@ const emotionOptions = [
   { id: "peaceful", label: "Peaceful", emoji: "🕊️" },
 ]
 
-export default function Dashboard() {
-  const { user, loading } = useAuth()
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [goals, setGoals] = useState<Goal[]>([])
+type VisualState = "peak-performance" | "struggling" | "moderate-progress" | "empty" | "activity-diversity" | "goal-achiever" | "loading" | "default"
+
+interface DashboardProps {
+  visualState?: VisualState
+  isWellbeingExpanded?: boolean
+  mockUser?: any
+  mockWorkouts?: Workout[]
+  mockGoals?: Goal[]
+  mockLoading?: boolean
+  mockAuthLoading?: boolean
+  mockWellbeingScore?: number
+  mockWellbeingEmotions?: string[]
+  mockWellbeingNotes?: string
+  mockWeather?: any
+}
+
+export default function Dashboard({
+  visualState = "default",
+  isWellbeingExpanded,
+  mockUser,
+  mockWorkouts,
+  mockGoals,
+  mockLoading = false,
+  mockAuthLoading = false,
+  mockWellbeingScore,
+  mockWellbeingEmotions,
+  mockWellbeingNotes,
+  mockWeather
+}: DashboardProps) {
+  const { user: authUser, loading: authLoading } = useAuth()
+  const user = mockUser !== undefined ? mockUser : authUser
+  const loading = mockAuthLoading !== undefined ? mockAuthLoading : authLoading
+
+  const [workouts, setWorkouts] = useState<Workout[]>(mockWorkouts || [])
+  const [goals, setGoals] = useState<Goal[]>(mockGoals || [])
   const [showWorkoutForm, setShowWorkoutForm] = useState(false)
   const [showGoalForm, setShowGoalForm] = useState(false)
-  const [dataLoading, setDataLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(mockLoading)
 
-  // Wellbeing state
-  const [wellbeingScore, setWellbeingScore] = useState([5])
-  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
-  const [wellbeingNotes, setWellbeingNotes] = useState("")
+  // Wellbeing state - initialize based on visualState for distinct scenario visuals
+  const getInitialWellbeingState = () => {
+    // Override with mock props if provided
+    if (mockWellbeingScore !== undefined || mockWellbeingEmotions !== undefined) {
+      return {
+        score: [mockWellbeingScore ?? 5],
+        emotions: mockWellbeingEmotions ?? [],
+        notes: mockWellbeingNotes ?? "",
+        expanded: isWellbeingExpanded ?? false
+      }
+    }
+
+    switch (visualState) {
+      case "peak-performance":
+        return {
+          score: [10],
+          emotions: ["energized", "motivated", "happy", "focused", "strong"],
+          notes: "Feeling absolutely amazing! Hit all my goals this week and ready for more! 💪🎉",
+          expanded: true // Show it expanded for peak performance
+        }
+      case "struggling":
+        return {
+          score: [2],
+          emotions: ["fatigued", "stressed", "anxious"],
+          notes: "Having a tough day. Need to take it easy and focus on small wins.",
+          expanded: true // Show it expanded to highlight the struggle
+        }
+      case "moderate-progress":
+        return {
+          score: [6],
+          emotions: ["motivated", "sore"],
+          notes: "Making steady progress. Some days are harder than others but staying consistent.",
+          expanded: false // Collapsed for variety
+        }
+      case "activity-diversity":
+        return {
+          score: [8],
+          emotions: ["energized", "happy", "strong"],
+          notes: "Love mixing up my workouts! Variety keeps things exciting.",
+          expanded: false // Collapsed to showcase other widgets
+        }
+      case "goal-achiever":
+        return {
+          score: [9],
+          emotions: ["happy", "strong", "peaceful"],
+          notes: "Proud of hitting my goals! Time to set new challenges.",
+          expanded: false // Collapsed for variety
+        }
+      default:
+        return {
+          score: [5],
+          emotions: [],
+          notes: "",
+          expanded: false // Collapsed by default
+        }
+    }
+  }
+
+  const initialWellbeing = getInitialWellbeingState()
+  const [wellbeingScore, setWellbeingScore] = useState(initialWellbeing.score)
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>(initialWellbeing.emotions)
+  const [wellbeingNotes, setWellbeingNotes] = useState(initialWellbeing.notes)
+  const [wellbeingExpanded, setWellbeingExpanded] = useState<boolean>(initialWellbeing.expanded)
   const [isSavingWellbeing, setIsSavingWellbeing] = useState(false)
 
   useEffect(() => {
+    // Update state when mock data changes
+    if (mockWorkouts !== undefined) {
+      setWorkouts(mockWorkouts)
+    }
+    if (mockGoals !== undefined) {
+      setGoals(mockGoals)
+    }
+  }, [mockWorkouts, mockGoals])
+
+  useEffect(() => {
+    // Skip fetching if mock data is provided
+    if (mockWorkouts !== undefined || mockGoals !== undefined) {
+      setDataLoading(false)
+      return
+    }
+
     if (user) {
       fetchData()
     }
-  }, [user])
+  }, [user, mockWorkouts, mockGoals])
 
   const fetchData = async () => {
     try {
@@ -120,12 +226,16 @@ export default function Dashboard() {
 
   const handleWorkoutAdded = () => {
     setShowWorkoutForm(false)
-    fetchData()
+    if (!mockWorkouts && !mockGoals) {
+      fetchData()
+    }
   }
 
   const handleGoalAdded = () => {
     setShowGoalForm(false)
-    fetchData()
+    if (!mockWorkouts && !mockGoals) {
+      fetchData()
+    }
   }
 
   const toggleEmotion = (emotionId: string) => {
@@ -228,11 +338,37 @@ export default function Dashboard() {
   const recentGoals = goals.slice(0, 3)
   const currentStreak = calculateStreak(workouts)
 
+  // Calculate activity diversity
+  const activityTypes = new Set(workouts.map(w => w.activity_type))
+  const activityDiversity = activityTypes.size
+
+  // Calculate performance level
+  const getPerformanceLevel = () => {
+    if (workouts.length >= 20 && completedGoals >= 2) return "peak"
+    if (workouts.length >= 10 && activeGoals >= 1) return "moderate"
+    if (workouts.length < 5) return "struggling"
+    return "building"
+  }
+  const performanceLevel = getPerformanceLevel()
+
+  // Banner priority: ONLY ONE shows at a time for visual clarity
+  // Explicit visualState takes priority over calculated state
+  // Priority: Empty (none) > Struggling > Peak > Diversity > Goal Achiever
+  const shouldShowStrugglingBanner = visualState === "struggling" || (visualState === "default" && performanceLevel === "struggling" && workouts.length > 0)
+  const shouldShowPeakBanner = !shouldShowStrugglingBanner && visualState === "empty" ? false : (visualState === "peak-performance" || (visualState === "default" && performanceLevel === "peak"))
+  const shouldShowDiversityBadge = !shouldShowStrugglingBanner && !shouldShowPeakBanner && visualState === "empty" ? false : (visualState === "activity-diversity" || (visualState === "default" && activityDiversity >= 6))
+  const shouldShowGoalAchiever = !shouldShowStrugglingBanner && !shouldShowPeakBanner && !shouldShowDiversityBadge && visualState === "empty" ? false : (visualState === "goal-achiever" || (visualState === "default" && completedGoals >= 3 && workouts.length < 20))
+
+  // Handle special visual states
+  if (visualState === "loading") {
+    return <LoadingScreen message="Loading your dashboard..." />
+  }
+
   return (
     <DashboardLayout>
-      <div className="space-y-2">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="space-y-3">
+        {/* Stats Grid - Distinct colors for each metric */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             title="Total Workouts"
             value={workouts.length.toString()}
@@ -255,7 +391,7 @@ export default function Dashboard() {
             numericValue={activeGoals}
             icon={Target}
             subtitle="In progress"
-            gradient="purple"
+            gradient="amber"
           />
           <MetricCard
             title="Completed Goals"
@@ -263,148 +399,240 @@ export default function Dashboard() {
             numericValue={completedGoals}
             icon={TrendingUp}
             subtitle="Achieved milestones"
-            gradient="coral"
+            gradient="purple"
           />
         </div>
 
-        {/* Wellbeing Section */}
-        <Card className={cn("overflow-hidden relative transition-all duration-500", getMoodGradient(wellbeingScore[0]))}>
-          {/* Light overlay for better text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/20 pointer-events-none" />
-
-          <CardContent className="p-3 relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-4 h-4 text-gray-800" />
-              <h2 className="text-base font-bold text-gray-900">How are you feeling today?</h2>
-            </div>
-
-            {/* Overall Score Slider */}
-            <div className="mb-2 bg-white/60 backdrop-blur-sm rounded-lg p-2">
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-800">Overall Score</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-gray-900">
-                    {wellbeingScore[0]}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-800">
-                    {getScoreLabel(wellbeingScore[0])}
-                  </span>
+        {/* Performance Status Banner - ONLY ONE shows at a time */}
+        {shouldShowPeakBanner && (
+          <Card className="bg-gradient-to-r from-green-700 to-green-600 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Peak Performance</h3>
+                  <p className="text-sm opacity-90">{workouts.length} workouts • {completedGoals} goals achieved</p>
                 </div>
               </div>
-              <Slider
-                value={wellbeingScore}
-                onValueChange={setWellbeingScore}
-                max={10}
-                min={1}
-                step={1}
-                className="w-full"
-                gradientTrack
-              />
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Emotion Selection */}
-            <div className="mb-2">
-              <label className="text-xs font-medium text-gray-800 mb-1 block">
-                Emotions (select all that apply)
-              </label>
-              <div className="grid grid-cols-5 gap-1">
-                {emotionOptions.map((emotion) => (
-                  <EmotionButton
-                    key={emotion.id}
-                    emotion={emotion}
-                    selected={selectedEmotions.includes(emotion.id)}
-                    onToggle={() => toggleEmotion(emotion.id)}
-                  />
-                ))}
+        {shouldShowStrugglingBanner && (
+          <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <Heart className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Building Your Foundation</h3>
+                  <p className="text-sm opacity-90">Every expert was once a beginner - you've got this!</p>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Notes and Save Button */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-              <div className="lg:col-span-2">
-                <label className="text-xs font-medium text-gray-800 mb-1 block">Notes (optional)</label>
-                <Textarea
-                  value={wellbeingNotes}
-                  onChange={(e) => setWellbeingNotes(e.target.value)}
-                  placeholder="Additional thoughts..."
-                  className="min-h-[60px] text-sm bg-white/90 border-white/30 focus-visible:ring-teal-500"
-                />
+        {shouldShowDiversityBadge && !shouldShowPeakBanner && (
+          <Card className="bg-gradient-to-r from-teal-700 to-teal-600 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <Mountain className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Activity Explorer</h3>
+                  <p className="text-sm opacity-90">{activityDiversity} different activity types - love the variety!</p>
+                </div>
               </div>
-              <div className="flex items-end">
-                <Button
-                  onClick={handleSaveWellbeing}
-                  disabled={isSavingWellbeing}
-                  variant="gradient"
-                  size="sm"
-                  className="w-full bg-white text-teal-600 hover:bg-white/90"
+            </CardContent>
+          </Card>
+        )}
+
+        {shouldShowGoalAchiever && !shouldShowPeakBanner && !shouldShowDiversityBadge && (
+          <Card className="bg-gradient-to-r from-yellow-600 to-amber-600 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <Target className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Goal Achiever</h3>
+                  <p className="text-sm opacity-90">{completedGoals} goals completed - celebrate your wins!</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Wellbeing Section - Collapsible */}
+        <Card className="overflow-hidden relative transition-all duration-500 bg-white border-green-200">
+          {/* Subtle green accent based on score */}
+          <div className={cn("absolute inset-0 opacity-10 pointer-events-none", getMoodGradient(wellbeingScore[0]))} />
+
+          <CardContent className="p-3 relative z-10">
+            {/* Collapsible Header */}
+            <button
+              onClick={() => setWellbeingExpanded(!wellbeingExpanded)}
+              className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-gray-800" />
+                <h2 className="text-base font-bold text-gray-900">How are you feeling today?</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Wellbeing mood indicator */}
+                {wellbeingScore[0] >= 8 && (
+                  <Badge className="bg-green-700 text-white text-xs">Feeling Great</Badge>
+                )}
+                {wellbeingScore[0] >= 4 && wellbeingScore[0] <= 7 && (
+                  <Badge className="bg-green-600 text-white text-xs">Doing OK</Badge>
+                )}
+                {wellbeingScore[0] <= 3 && (
+                  <Badge className="bg-orange-500 text-white text-xs">Take Care</Badge>
+                )}
+                {/* Chevron indicator */}
+                <svg
+                  className={cn("w-5 h-5 text-gray-800 transition-transform duration-200", wellbeingExpanded ? "rotate-180" : "")}
+                  fill="none"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {isSavingWellbeing ? (
-                    <>
-                      <Save className="w-3 h-3 mr-1 animate-pulse" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3 h-3 mr-1" />
-                      Save
-                    </>
-                  )}
-                </Button>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            </div>
+            </button>
+
+            {/* Expandable Content */}
+            {wellbeingExpanded && (
+              <>
+                {/* Overall Score Slider */}
+                <div className="mb-2 bg-white/60 backdrop-blur-sm rounded-lg p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-gray-800">Overall Score</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {wellbeingScore[0]}
+                      </span>
+                      <span className="text-xs font-semibold text-gray-800">
+                        {getScoreLabel(wellbeingScore[0])}
+                      </span>
+                    </div>
+                  </div>
+                  <Slider
+                    value={wellbeingScore}
+                    onValueChange={setWellbeingScore}
+                    max={10}
+                    min={1}
+                    step={1}
+                    className="w-full"
+                    gradientTrack
+                  />
+                </div>
+
+                {/* Emotion Selection */}
+                <div className="mb-2">
+                  <label className="text-xs font-medium text-gray-800 mb-1 block">
+                    Emotions (select all that apply)
+                  </label>
+                  <div className="grid grid-cols-5 gap-1">
+                    {emotionOptions.map((emotion) => (
+                      <EmotionButton
+                        key={emotion.id}
+                        emotion={emotion}
+                        selected={selectedEmotions.includes(emotion.id)}
+                        onToggle={() => toggleEmotion(emotion.id)}
+                      />
+                    ))}
+                  </div>
+                  {/* Emotion count indicator */}
+                  {selectedEmotions.length >= 5 && (
+                    <p className="text-xs text-gray-700 mt-1 font-medium">
+                      Processing a lot today - that's completely normal 💭
+                    </p>
+                  )}
+                  {selectedEmotions.length === 0 && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Select emotions to track your mental state
+                    </p>
+                  )}
+                </div>
+
+                {/* Notes and Save Button */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                  <div className="lg:col-span-2">
+                    <label className="text-xs font-medium text-gray-800 mb-1 block">Notes (optional)</label>
+                    <Textarea
+                      value={wellbeingNotes}
+                      onChange={(e) => setWellbeingNotes(e.target.value)}
+                      placeholder="Additional thoughts..."
+                      className="min-h-[60px] text-sm bg-white/90 border-white/30 focus-visible:ring-teal-500"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      onClick={handleSaveWellbeing}
+                      disabled={isSavingWellbeing}
+                      variant="gradient"
+                      size="sm"
+                      className="w-full bg-white text-teal-600 hover:bg-white/90"
+                    >
+                      {isSavingWellbeing ? (
+                        <>
+                          <Save className="w-3 h-3 mr-1 animate-pulse" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3 mr-1" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Action Cards and Recent Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          {/* Track Workout Card */}
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-3 text-center">
-              <div className="mb-2">
-                <Mountain className="w-8 h-8 mx-auto opacity-80" />
-              </div>
-              <h3 className="text-sm font-semibold mb-1">Track Workout</h3>
-              <Button
-                onClick={() => setShowWorkoutForm(true)}
-                variant="secondary"
-                size="sm"
-                className="bg-white text-green-600 hover:bg-green-50 w-full"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Quick Actions */}
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowWorkoutForm(true)}
+            className="bg-green-700 text-white hover:bg-green-800"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Track Workout
+          </Button>
+          <Button
+            onClick={() => setShowGoalForm(true)}
+            className="bg-green-600 text-white hover:bg-green-700"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Set Goal
+          </Button>
+        </div>
 
-          {/* Set Goal Card */}
-          <Card className="bg-gradient-to-br from-blue-500 to-teal-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-3 text-center">
-              <div className="mb-2">
-                <Target className="w-8 h-8 mx-auto opacity-80" />
-              </div>
-              <h3 className="text-sm font-semibold mb-1">Set Goal</h3>
-              <Button
-                onClick={() => setShowGoalForm(true)}
-                variant="secondary"
-                size="sm"
-                className="bg-white text-blue-600 hover:bg-blue-50 w-full"
-              >
-                <Target className="w-3 h-3 mr-1" />
-                Add
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Recent Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
           {/* Recent Workouts */}
-          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200">
+          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200 border-green-100">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <Mountain className="w-4 h-4 text-teal-600" />
+                  <Mountain className="w-4 h-4 text-green-700" />
                   <CardTitle className="text-sm">Recent Workouts</CardTitle>
                 </div>
                 <Link href="/dashboard/workouts">
-                  <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 h-6 px-2 text-xs">
+                  <Button variant="ghost" size="sm" className="text-green-700 hover:text-green-800 h-6 px-2 text-xs">
                     All <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
@@ -449,11 +677,11 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-teal-100 to-blue-100 dark:from-teal-900 dark:to-blue-900 rounded-full flex items-center justify-center">
-                    <Mountain className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                  <div className="w-12 h-12 mx-auto mb-2 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                    <Mountain className="w-6 h-6 text-green-700 dark:text-green-400" />
                   </div>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">No workouts yet</p>
-                  <Button onClick={() => setShowWorkoutForm(true)} variant="gradient" size="sm">
+                  <Button onClick={() => setShowWorkoutForm(true)} className="bg-green-700 hover:bg-green-800 text-white" size="sm">
                     <Plus className="w-3 h-3 mr-1" />
                     Add workout
                   </Button>
@@ -463,15 +691,15 @@ export default function Dashboard() {
           </Card>
 
           {/* Recent Goals */}
-          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200">
+          <Card className="bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200 border-green-100">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <Target className="w-4 h-4 text-purple-600" />
+                  <Target className="w-4 h-4 text-green-700" />
                   <CardTitle className="text-sm">Recent Goals</CardTitle>
                 </div>
                 <Link href="/dashboard/goals">
-                  <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 h-6 px-2 text-xs">
+                  <Button variant="ghost" size="sm" className="text-green-700 hover:text-green-800 h-6 px-2 text-xs">
                     All <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
@@ -499,7 +727,15 @@ export default function Dashboard() {
                             />
 
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-xs truncate">{goal.title}</h4>
+                              <div className="flex items-center gap-1">
+                                <h4 className="font-semibold text-xs truncate">{goal.title}</h4>
+                                {goal.status === "completed" && (
+                                  <Badge className="bg-green-500 text-white text-[10px] px-1 py-0">✓</Badge>
+                                )}
+                                {progress >= 85 && progress < 100 && goal.status === "active" && (
+                                  <Badge className="bg-orange-500 text-white text-[10px] px-1 py-0">Almost!</Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-gray-600 dark:text-gray-400">
                                 {goal.current_value} / {goal.target_value} {goal.unit}
                               </p>
@@ -526,11 +762,11 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-full flex items-center justify-center">
-                    <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  <div className="w-12 h-12 mx-auto mb-2 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                    <Target className="w-6 h-6 text-green-700 dark:text-green-400" />
                   </div>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">No goals yet</p>
-                  <Button onClick={() => setShowGoalForm(true)} variant="gradient-purple" size="sm">
+                  <Button onClick={() => setShowGoalForm(true)} className="bg-green-700 hover:bg-green-800 text-white" size="sm">
                     <Plus className="w-3 h-3 mr-1" />
                     Set goal
                   </Button>
@@ -541,11 +777,14 @@ export default function Dashboard() {
         </div>
 
         {/* Analytics Widgets Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <StreakWidget currentStreak={currentStreak} workouts={workouts} />
-          <ActivityDistributionWidget workouts={workouts} />
-          <WeekComparisonWidget workouts={workouts} />
-          <WeatherWidget workouts={workouts} />
+        <div className="space-y-3">
+          {/* Top Row - 4 widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <StreakWidget currentStreak={currentStreak} workouts={workouts} />
+            <ActivityDistributionWidget workouts={workouts} />
+            <WeekComparisonWidget workouts={workouts} />
+            <WeatherWidget workouts={workouts} mockWeather={mockWeather} />
+          </div>
         </div>
       </div>
 
