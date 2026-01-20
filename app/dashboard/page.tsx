@@ -67,6 +67,7 @@ const emotionOptions = [
   { id: "peaceful", label: "Peaceful", emoji: "🕊️" },
 ]
 
+// Visual states for CodeYam scenario generation - ensures 5 distinct visual variations
 type VisualState = "peak-performance" | "struggling" | "moderate-progress" | "empty" | "activity-diversity" | "goal-achiever" | "loading" | "default"
 
 interface DashboardProps {
