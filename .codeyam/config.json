@@ -1,0 +1,23 @@
+{
+  "projectSlug": "nseldeib-new-trail-tracker",
+  "packageManager": "pnpm",
+  "webapps": [
+    {
+      "path": ".",
+      "framework": "Next",
+      "packageManager": "pnpm",
+      "appDirectory": "app",
+      "startCommand": {
+        "command": "pnpm",
+        "args": [
+          "dev",
+          "--port",
+          "$PORT"
+        ]
+      }
+    }
+  ],
+  "environmentVariables": [],
+  "createdAt": "2026-01-20T18:17:38.721Z",
+  "branchId": "5b75e9b1-4d06-465e-930e-211a0b9aeb4a"
+}

@@ -26,6 +26,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# CodeYam local files (contains secrets and local database)
-.codeyam
+# CodeYam - ignore everything except database, screenshots, and universal mocks
+.codeyam/*
+!.codeyam/db.sqlite3
+!.codeyam/config.json
+!.codeyam/captures/
+.codeyam/captures/*
+!.codeyam/captures/screenshots/
+!.codeyam/universal-mocks/
+
 .env*.local
