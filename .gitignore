@@ -26,7 +26,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# CodeYam - ignore everything except database, screenshots, and universal mocks
+# CodeYam - ignore everything except database, screenshots, universal mocks, and power rules
 .codeyam/*
 !.codeyam/db.sqlite3
 !.codeyam/config.json
@@ -34,5 +34,7 @@ next-env.d.ts
 .codeyam/captures/*
 !.codeyam/captures/screenshots/
 !.codeyam/universal-mocks/
+!.codeyam/bin/
+!.codeyam/rules/
 
 .env*.local

@@ -224,3 +224,29 @@ useEffect(() => {
 TypeScript path mapping (`tsconfig.json`):
 - `@/*` → Root directory
 - Examples: `@/components`, `@/lib/supabase/client`, `@/app`
+
+## Automated Architectural Documentation (Claude Rules via CodeYam)
+
+This project uses significant documentation stored as Claude Rules (`.claude/rules`).
+It is your responsibility to add to, update, and improve this documentation.
+We focus on three categories of documentation:
+
+1. Architecture
+   - Any time there is a specific relationship between files please capture the architecture
+   - Note how the files relate, how data flows, and how changes should be approached
+
+2. Testing
+   - For complex areas of the app where both manual and automated testing is complex track:
+     - Helpful commands used in debugging and testing
+     - Where test files are located if it is not obvious (and the command to run them if not obvious)
+
+3. FAQ
+   - If you are ever confused about something that does not fit into the above categories document it here.
+   - Anything you have to figure out or ask the user about should be captured here.
+
+During each development session modify and add appropriate rules to track anything that is at all confusing.
+Ask clarifying questions to ensure you are not documenting anything inaccurate.
+After each development session review and improve all appropriate rules to ensure they are accurate, concise, and up-to-date.
+Always focus on positive instructions explaining how it works, what to run, where to find things, etc in concise terms. Do not add warnings unless necessary. Do not state anything obvious.
+All rules must be as concise as possible. Look for opportunities to improve how concise it is worded. We want to minimize the impact on the context window.
+When adding a new rules document see `.codeyam/rules/instructions.md` for instructions on where to create the rule and the format to use.
