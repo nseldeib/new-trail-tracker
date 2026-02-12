@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "rules": {
+    "app/dashboard/scenario-maintenance.md": {
+      "contentHash": "ce100a103a0f01eceeb4563a78362092edf1d06370e7e26a2d303647461daa88",
+      "reviewed": true
+    },
+    "build-configuration.md": {
+      "contentHash": "a98bbc83b4344ce21edfc8966a36bf10dc88de1ed5dbacd5a0075edafbd24361",
+      "reviewed": true
+    },
+    "codeyam-patterns.md": {
+      "contentHash": "46ce22a1aa3c38a293fd3266600a8584fb7c5d591717cdf1fd04de70ca9b1716",
+      "reviewed": true
+    },
+    "components/dashboard/widget-pattern.md": {
+      "contentHash": "5b9a0a67efb5c981b3603050057e455172d9040a44e298f697cbc62d752b1291",
+      "reviewed": true
+    },
+    "lib/supabase/client-usage.md": {
+      "contentHash": "8fd92bc8dd574b66350cafa800dd0472ea01631b2ba27d420d123244b2e6067f",
+      "reviewed": true
+    },
+    "lib/supabase/universal-mocks.md": {
+      "contentHash": "e788a13a4061f06cb6e82a6887bb0b6ffec9841d026d46c34dde06fcd1a1cb21",
+      "reviewed": true
+    }
+  }
+}
