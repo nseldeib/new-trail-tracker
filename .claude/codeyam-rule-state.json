@@ -24,6 +24,30 @@
     "lib/supabase/universal-mocks.md": {
       "contentHash": "e788a13a4061f06cb6e82a6887bb0b6ffec9841d026d46c34dde06fcd1a1cb21",
       "reviewed": true
+    },
+    "adding-features.md": {
+      "contentHash": "82a474700c9376580295dafce5c4bea42b8e59f6a73998bd73781a62f87aa24e",
+      "reviewed": true
+    },
+    "app/dashboard/protected-routes.md": {
+      "contentHash": "241b87471dd2937a7a0a768abf02faee5b42ed48d40a990f33290010fb352b9f",
+      "reviewed": true
+    },
+    "components/form-pattern.md": {
+      "contentHash": "c15b7d1b29c13792ab51e285eef06fc3c1582ecf53777cf82220767d2dd634db",
+      "reviewed": true
+    },
+    "lib/activity-types.md": {
+      "contentHash": "d38ba81173b97e14c1b0fd4fa9d4929d6f1d71926bfe3506fee9e05d2d57636c",
+      "reviewed": true
+    },
+    "lib/supabase/rls-testing.md": {
+      "contentHash": "f8ff7bfcc359e35f397e2bc917265ef070f4fa8d35ef9e978f62e11b4862a8f0",
+      "reviewed": true
+    },
+    "scripts/migration-workflow.md": {
+      "contentHash": "78cb1dc5c2e811644b6b85a1d4eeca4067b029efd0a1f2af412e255f5e3f49f9",
+      "reviewed": true
     }
   }
 }
